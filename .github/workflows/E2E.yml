@@ -1,0 +1,27 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  sandbox-org-tests:
+    runs-on: ubuntu-latest # or macos-latest, windows-latest ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    - name: Install project dependencies
+      run: npm install
+    - name: Install PW
+      run: npx playwright install chrome   
+    - name: prepare credentials
+      run: |
+        npx ts-node test/utils/CI/StoreSfdcSecrets.ts sys.admin@dmcc.qa ${{ secrets.QA_SYSADMIN_PSWD }}
+        npx ts-node test/utils/CI/StoreGmailSecrets.ts ${{ secrets.GMAIL_CREDS }}    
+    - name: Run tests
+      run: npm run test-cli-debug 
+    - uses: actions/upload-artifact@v2
+      with:
+        name: playwright-test-report
+        path: playwright-report/**
+        retention-days: 1

@@ -1,0 +1,22 @@
+{
+  "name": "playwright-dmcc",
+  "version": "1.0.0",
+  "description": "DMCC Freezone test automation framework",
+  "scripts": {
+    "test": "npx playwright test",
+    "test-headed": "npx playwright test --headed",
+    "test-cli-debug": "DEBUG=pw:api npx playwright test"
+  },
+  "author": "Dawid Dobrowolski SoftQA",
+  "license": "MIT",
+  "dependencies": {
+    "@faker-js/faker": "^7.5.0",
+    "@playwright/test": "^1.25.2",
+    "@types/jsforce": "^1.9.43",
+    "ajv": "^8.11.0",
+    "googleapis": "^95.0.0",
+    "jsforce": "^1.11.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.3"
+  }
+}

@@ -38,13 +38,13 @@ test.describe('DMCC demo - E2E flow', () => {
             await UI.loginOn(page);
         });
 
-        // await test.step('Create new Lead via UI', async () => {
-        //     const leadId = await Lead.newByUi(page);
-        // });
-
-        await test.step('Create new Lead via API and Navigate to it', async () => {
-            await UI.navigateToRecord(page, await Lead.newByApi(API));
+        await test.step('Create new Lead via UI', async () => {
+            await Lead.newByUi(page);
         });
+
+        // await test.step('Create new Lead via API and Navigate to it', async () => {
+        //     await UI.navigateToRecord(page, await Lead.newByApi(API));
+        // });
 
         await test.step('Convert Lead', async () => {
             await page.click(HighlightsPanel.CONVERT_BUTTON);

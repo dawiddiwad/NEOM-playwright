@@ -24,28 +24,19 @@ export class Lead {
             data = {
                 "LastName": faker.name.lastName(),
                 "FirstName": faker.name.firstName(),
-                "RecordTypeId": "012b0000000b1GuAAI",
-                "Company": faker.company.companyName(),
-                "Street": faker.address.streetName(),
-                "City": faker.address.cityName(),
-                "State": faker.address.state(),
-                "PostalCode": faker.address.zipCode(),
-                "Country": faker.address.country(),
-                "Phone": "+7274114-920-272",
-                "Email": "dmccinboxqa@gmail.com",
+                "RecordTypeId": "0123H000000A8wXQAS",
+                "Company": faker.company.name(),
+                "Phone": faker.phone.number('###-###-###'),
+                "Email": faker.internet.email(),
                 "Description": "QA automation",
-                "LeadSource": "Web",
-                "CurrencyIsoCode": "AED",
-                "About_DMCC_L1__c": "Advertising / News / Editorial",
-                "About_DMCC_L2__c": "Email Advertising",
-                "Company_Setup__c": "Immediately",
-                "Company_Type__c": "New Company",
-                "Country__c": "Afghanistan",
-                "Phone_No__c": faker.phone.phoneNumber('###-###-###'),
-                "Address_Country__c": "Afghanistan"
+                "LeadSource": "Other",
             };
         }
         return (await api.create('Lead', data) as SuccessResult).id;
+    }
+
+    public static async deleteByApi(api: SfdcApiCtx, id: string): Promise<string> {
+        return (await api.delete('Lead', id) as SuccessResult).id;
     }
 
     public static async newByUi(page: Page): Promise<void> {
@@ -53,22 +44,13 @@ export class Lead {
         await page.fill(NavigationBar.APP_LAUNCHER_SEARCH_FIELD, "Leads");
         await page.click(NavigationBar.getAppLauncherSearchResultsItemByLabel("Leads"));
         await page.click(ListView.NEW_BUTTON);
+        await page.click(Modal.FOOD_LEAD_BUTTON);
         await page.click(Modal.NEXT_BUTTON);
-        await Lead.fillPicklistWithValue(page, "Lead Source", "Web");
-        await Lead.fillPicklistWithValue(page, "Origin Country", "Afghanistan");
-        await Lead.fillPicklistWithValue(page, "Company Type", "New Company");
-        await Lead.fillPicklistWithValue(page, "Activity Type", "Service");
-        await Lead.fillPicklistWithValue(page, "Company Setup", "Immediately");
-        await Lead.fillPicklistWithValue(page, "How did you hear about us (1)", "Advertising / News / Editorial");
-        await Lead.fillPicklistWithValue(page, "How did you hear about us (2)", "Email Advertising");
-        await Lead.fillPicklistWithValue(page, "Address Country", "Afghanistan");
+        await Lead.fillPicklistWithValue(page, "Lead Source", "Other");
         await page.fill(Lead.FIRST_NAME, faker.name.firstName());
         await page.fill(Lead.LAST_NAME, faker.name.lastName());
-        await page.fill(Lead.EMAIL, "dmccinboxqa@gmail.com");
-        await page.fill(Lead.COMPANY, faker.company.companyName());
-        await page.fill(Lead.COUNTRY_CODE, faker.datatype.number(100).toString());
-        await page.fill(Lead.AREA_CODE, faker.datatype.number(100).toString());
-        await page.fill(Lead.PHONE_NUMBER, faker.phone.phoneNumber('###-###-###'));
+        await page.fill(Lead.EMAIL, faker.internet.email());
+        await page.fill(Lead.COMPANY, faker.company.name());
         await page.fill(Lead.DESCRIPTION, "QA automation");
         await page.click(Lead.SAVE_BUTTON);
     }

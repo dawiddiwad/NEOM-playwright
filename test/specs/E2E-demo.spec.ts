@@ -1,5 +1,6 @@
 import faker from "@faker-js/faker";
 import test from "@playwright/test";
+import { stringify } from "ajv";
 import { ApplicantDetails } from "../locators/portal/ApplicantDetails";
 import { BeforeStarting } from "../locators/portal/BeforeStarting";
 import { FreezoneLogin } from "../locators/portal/FreezoneLogin";
@@ -37,32 +38,24 @@ test.describe('DMCC demo - E2E flow', () => {
             await UI.loginOn(page);
         });
 
-        await test.step('Create new Lead via UI', async () => {
-            await Lead.newByUi(page);
-        });
-
-        // await test.step('Create new Lead via API', async () => {
-        //     await UI.navigateToRecord(page, await Lead.newByApi(API));
+        // await test.step('Create new Lead via UI', async () => {
+        //     const leadId = await Lead.newByUi(page);
         // });
+
+        await test.step('Create new Lead via API and Navigate to it', async () => {
+            await UI.navigateToRecord(page, await Lead.newByApi(API));
+        });
 
         await test.step('Convert Lead', async () => {
             await page.click(HighlightsPanel.CONVERT_BUTTON);
-            await page.click(LeadConvert.CONVERT_BUTTON, {delay: 2000});
+            await page.waitForLoadState('networkidle');
+            await page.click(LeadConvert.CONVERT_BUTTON);
             await page.click(LeadConvert.OPPORTUNITY_LINK);
         });
 
         await test.step('Edit Opportunity', async () => {
-            await page.click(HighlightsPanel.EDIT_BUTTON);
-            await Opportunity.selectItemOnLookup(page, "SR Template", "201-New Company Application L2L");
-            await page.fill(Opportunity.LEAD_EMAIL, "dmccinboxqa@gmail.com");
-            await page.click(Opportunity.SAVE_BUTTON);
-        });
-
-        await test.step(`Save Opportunity as a 'Convincing Customer'`, async () => {
-            await page.click(StagesPath.CHANGE_CLOSED_STAGE_BUTTON);
-            await StagesPath.fillPicklistWithValue(page, "StageName", "Convincing Customer");
-            await page.click(StagesPath.DONE_BUTTON);
-            await page.waitForLoadState('networkidle');
+            await page.click(Opportunity.NEED_ANALYSIS_STAGE);
+            await page.click(Opportunity.MARK_AS_CURRENT_STAGE_BUTTON);
         });
 
         await test.step('logout from SFDC', async () => {
@@ -70,7 +63,7 @@ test.describe('DMCC demo - E2E flow', () => {
         });
     });
 
-    test('Portal flow until 1st payemnt', async ({page}) => {test.slow();
+    test.skip('Portal flow until 1st payemnt', async ({page}) => {test.slow();
         let username;
         await test.step('Signup Password', async () => {
             await page.goto(await mailer.latestSignupLink(), {waitUntil: 'networkidle'});
@@ -81,7 +74,7 @@ test.describe('DMCC demo - E2E flow', () => {
         await test.step('Singup OTP', async () => {
             await Signup.enterOTP(page, await mailer.latestSignupCode());
             await page.click(Signup.CONTINUE_BUTTON);
-            username = FreezoneLogin.registeredUsernameFrom(await page.textContent(FreezoneLogin.USERNAME_BOX));
+            username = FreezoneLogin.registeredUsernameFrom(await page.textContent(FreezoneLogin.USERNAME_BOX)??"");
             await page.click(Signup.GO_TO_LOGIN_BUTTON);
         });
         await test.step('Login to Portal', async () => {

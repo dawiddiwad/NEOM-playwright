@@ -125,4 +125,15 @@ export class SfdcApiCtx extends SfdcCtx {
       process.exit(1);
     }
   }
+
+  public async executeApex(apexBody: string): Promise<void> {
+    this.conn.tooling.executeAnonymous(apexBody, function(err, res) {
+      if (err) {
+        console.error(
+          `unable to execute apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`
+        );
+        process.exit(1);
+      }
+    });
+  }
 }

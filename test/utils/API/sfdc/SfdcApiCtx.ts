@@ -44,7 +44,7 @@ export class SfdcApiCtx extends SfdcCtx {
   }
 
   private checkForErrors(data: RecordResult[]): SuccessResult[] {
-    let errors: string[] = [];
+    let errors: any[] = [];
     data.forEach((result) => {
       if (!result.success) {
         (result as ErrorResult).errors.forEach((error) => errors.push(error));

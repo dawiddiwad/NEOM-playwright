@@ -40,9 +40,7 @@ export class Lead {
     }
 
     public static async newByUi(page: Page): Promise<void> {
-        await page.click(NavigationBar.APP_LAUNCHER);
-        await page.fill(NavigationBar.APP_LAUNCHER_SEARCH_FIELD, "Leads");
-        await page.click(NavigationBar.getAppLauncherSearchResultsItemByLabel("Leads"));
+        await NavigationBar.openApp(page, "Leads");
         await page.click(ListView.NEW_BUTTON);
         await page.click(Modal.FOOD_LEAD_BUTTON);
         await page.click(Modal.NEXT_BUTTON);

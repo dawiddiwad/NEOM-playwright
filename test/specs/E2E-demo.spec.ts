@@ -31,13 +31,15 @@ test.describe('DMCC demo - E2E flow', () => {
         //mailer = await new FreezoneMailer().Ready;
         UI = await new SfdcUiCtx(Environment.QA, User.SYSADMIN).Ready;
         API = await new SfdcApiCtx(Environment.QA, User.SYSADMIN).Ready;
-    })
+    });
 
-    test('Create and Convert Lead', async ({page}) => {test.slow();
+    test.beforeEach(async({page}) => {
         await test.step('login to SFDC', async () => {
             await UI.loginOn(page);
         });
+    });
 
+    test('Create and Convert Lead', async ({page}) => {test.slow();
         await test.step('Create new Lead via UI', async () => {
             await Lead.newByUi(page);
         });

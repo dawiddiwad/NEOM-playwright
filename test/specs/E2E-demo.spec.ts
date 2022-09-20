@@ -83,13 +83,13 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
             await page.frameLocator(iframe).locator('select[name="Profile"]').selectOption(LpCommunityUserProfileId);
             await page.frameLocator(iframe).locator("//input[@id='Email']").fill(leaseeUsername);
             await page.frameLocator(iframe).locator("(//input[@title='Save'])[last()]").click();
-            const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
-            await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
         });
     });
 
     test('Leasee fills out application', async ({page}) => {test.slow();
         await test.step('Login to Portal', async() => {
+            const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
+            await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
             const lpPortalSiteId = (await API_SYSADMIN.query("select id from site where name = 'Logistics_Park'") as QueryResult<any>).records[0].Id;
             const lpPortalSiteUrl = (await API_SYSADMIN.query(`select SecureUrl from sitedetail where durableid = '${lpPortalSiteId}'`) as QueryResult<any>).records[0].SecureUrl;
             await page.goto(lpPortalSiteUrl);

@@ -1,4 +1,4 @@
-import faker from "@faker-js/faker";
+import { faker } from "@faker-js/faker";
 import test from "@playwright/test";
 import { stringify } from "ajv";
 import { ApplicantDetails } from "../locators/portal/ApplicantDetails";
@@ -29,8 +29,8 @@ test.describe('DMCC demo - E2E flow', () => {
 
     test.beforeAll(async () => {
         //mailer = await new FreezoneMailer().Ready;
-        UI = await new SfdcUiCtx(Environment.QA, User.SYSADMIN).Ready;
-        API = await new SfdcApiCtx(Environment.QA, User.SYSADMIN).Ready;
+        UI = await new SfdcUiCtx(Environment.INT, User.LP_LEASING).Ready;
+        API = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
     });
 
     test.beforeEach(async({page}) => {
@@ -39,7 +39,7 @@ test.describe('DMCC demo - E2E flow', () => {
         });
     });
 
-    test('Create and Convert Lead', async ({page}) => {test.slow();
+    test.skip('Create and Convert Lead', async ({page}) => {test.slow();
         await test.step('Create new Lead via UI', async () => {
             await Lead.newByUi(page);
         });
@@ -63,6 +63,60 @@ test.describe('DMCC demo - E2E flow', () => {
         await test.step('logout from SFDC', async () => {
             await UI.logoutFrom(page);
         });
+    });
+
+    test('LP E2E', async ({page}) => {test.slow();
+
+        //create new Case
+        await NavigationBar.openApp(page, "Cases");
+        // Click a[role="button"]:has-text("New")
+        await page.locator('a[role="button"]:has-text("New")').click();
+        // Click text=Type--None-- >> a[role="button"]
+        await page.locator('text=Type--None-- >> a[role="button"]').click();
+        // Click text=Inquiry
+        await page.locator('text=Request').click();
+        // Click text=Case Origin*--None-- >> a[role="button"]
+        await page.locator('text=Case Origin*--None-- >> a[role="button"]').click();
+        // Click a[role="menuitemradio"]:has-text("Web")
+        await page.locator('a[role="menuitemradio"]:has-text("Web")').click();
+        // Click button:has-text("Save") >> nth=3
+        await page.locator('button:has-text("Save")').nth(3).click();
+
+        //create new Contact/Account and link it to the Case
+        // Click button:has-text("Edit Contact Name")
+        await page.locator('button:has-text("Edit Contact Name")').click();
+        // Click [placeholder="Search Contacts\.\.\."]
+        await page.locator('[placeholder="Search Contacts\\.\\.\\."]').click();
+        // Click lightning-base-combobox-item[role="option"]:has-text("AddNew Contact")
+        await page.locator('lightning-base-combobox-item[role="option"]:has-text("AddNew Contact")').click();
+        // Click [placeholder="Last Name"]
+        await page.locator('[placeholder="Last Name"]').click();
+        // Fill [placeholder="Last Name"]
+        await page.locator('[placeholder="Last Name"]').fill(faker.name.firstName());
+        // Click [placeholder="Search Accounts\.\.\."]
+        await page.locator('[placeholder="Search Accounts\\.\\.\\."]').click();
+        // Click div[role="option"]:has-text("New Account")
+        await page.locator('div[role="option"]:has-text("New Account")').click();
+        await page.locator("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Account Name']]] and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").fill(faker.company.name());
+        await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").click();
+        await page.waitForLoadState('networkidle');
+        await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Contact']]]]").click();
+        await page.waitForLoadState('networkidle');
+        await page.locator("//button[@name='SaveEdit']").click();
+        await page.waitForLoadState('networkidle');
+
+        //enable Account and Contact as partner
+        await page.click("//force-lookup[ancestor::*[preceding-sibling::*[contains(@class, 'label-container') and descendant::*[text()='Account Name']]]]");
+        await page.click("//button[text()='Enable As Partner']");
+        await page.click("//button[@title='Enable As Partner']");
+        await page.goBack();
+        await page.click("//force-lookup[ancestor::*[preceding-sibling::*[contains(@class, 'label-container') and descendant::*[text()='Contact Name']]]]");
+        await page.click("//button[text()='Enable Partner User']");
+        const iframe = "//iframe[contains(@title, 'New User')]";
+        const LpCommunityUserProfileId = (await API.query("select id from profile where name = 'LP Partner Community Login User'") as any).records[0].Id.substring(0,15);
+        await page.frameLocator(iframe).locator('select[name="Profile"]').selectOption(LpCommunityUserProfileId);
+        await page.frameLocator(iframe).locator("//input[@id='Email']").fill(faker.internet.email());
+        await page.frameLocator(iframe).locator("(//input[@title='Save'])[last()]").click();
     });
 
     test.skip('Portal flow until 1st payemnt', async ({page}) => {test.slow();

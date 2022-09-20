@@ -36,7 +36,7 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
         UI_SYSADMIN = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
         API_SYSADMIN = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
         leaseeUsername = faker.internet.email(); console.debug(leaseeUsername);
-        leaseePassword = faker.internet.password(); console.debug(leaseePassword);
+        leaseePassword = faker.internet.password(15, false, /[A-Za-z\d]/); console.debug(leaseePassword);
     });
 
     test('Leasing Team enables new Customer', async ({page}) => {test.slow();
@@ -87,14 +87,17 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
     });
 
     test('Leasee fills out application', async ({page}) => {test.slow();
-        await test.step('Login to Portal', async() => {
+        await test.step('Setup Leasee User password', async() => {
             const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
             await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
+        });
+
+        await test.step('Login to Portal', async() => {
             const lpPortalSiteId = (await API_SYSADMIN.query("select id from site where name = 'Logistics_Park'") as QueryResult<any>).records[0].Id;
             const lpPortalSiteUrl = (await API_SYSADMIN.query(`select SecureUrl from sitedetail where durableid = '${lpPortalSiteId}'`) as QueryResult<any>).records[0].SecureUrl;
             await page.goto(lpPortalSiteUrl);
-            await page.fill("//input[@placeholder='Username']", leaseeUsername??"missing");
-            await page.fill("//input[@placeholder='Password']", leaseePassword??"missing");
+            await page.fill("//input[@placeholder='Username']", leaseeUsername);
+            await page.fill("//input[@placeholder='Password']", leaseePassword);
             await page.click("//button[descendant::*[text()='Log in']]");
             await page.waitForTimeout(5000);
         });

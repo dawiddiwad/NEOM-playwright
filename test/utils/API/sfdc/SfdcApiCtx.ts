@@ -1,6 +1,7 @@
 import {
   Connection,
   ErrorResult,
+  ExecuteAnonymousResult,
   QueryResult,
   Record,
   RecordResult,
@@ -9,6 +10,7 @@ import {
   SObject,
   SuccessResult,
   UserInfo,
+  ExecuteOptions
 } from "jsforce";
 import { SfdcCtx } from "../../Common/context/SfdcCtx";
 import { Environment } from "../../common/credentials/structures/Environment";
@@ -116,24 +118,22 @@ export class SfdcApiCtx extends SfdcCtx {
   }
 
   public async query(soql: string): Promise<QueryResult<unknown>> {
-    try {
-      return await this.conn.query(soql);
-    } catch (e) {
-      console.error(
-        `unable to execute soql:\n${soql}\ndue to:\n${(e as Error).stack}`
-      );
-      process.exit(1);
-    }
+    return await this.conn.query(soql, undefined, function(err, res) {
+      if (err) {
+        throw new Error(`unable to execute soql:\n${soql}\ndue to:\n${(err as Error).stack}`);
+      } else return res;
+    });
   }
 
-  public async executeApex(apexBody: string): Promise<void> {
-    this.conn.tooling.executeAnonymous(apexBody, function(err, res) {
+  public async executeApex(apexBody: string): Promise<ExecuteAnonymousResult> {
+    const result: ExecuteAnonymousResult = await this.conn.tooling.executeAnonymous(apexBody, function(err, res) {
       if (err) {
-        console.error(
-          `unable to execute apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`
-        );
-        process.exit(1);
+        throw new Error(`unable to execute apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`);
       }
     });
+
+    if (!result.success){
+      throw new Error(`unable to execute apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
+    } else return result;
   }
 }

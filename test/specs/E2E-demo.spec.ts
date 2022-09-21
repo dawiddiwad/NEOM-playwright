@@ -21,7 +21,7 @@ import { Environment } from "../utils/common/credentials/structures/Environment"
 import { User } from "../utils/common/credentials/structures/User";
 import { SfdcUiCtx } from "../utils/UI/SfdcUiCtx";
 
-test.describe('NEOM test automation demo - LP E2E flow', () => {
+test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     let mailer: FreezoneMailer;
     let UI_LP_LEASING: SfdcUiCtx;
     let UI_SYSADMIN: SfdcUiCtx;
@@ -30,17 +30,15 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
     let leaseePassword;
     let leaseeApp;
 
-    test.describe.configure({ mode: 'serial' });
-
     test.beforeAll(async () => {
         UI_LP_LEASING = await new SfdcUiCtx(Environment.INT, User.LP_LEASING).Ready;
         UI_SYSADMIN = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
         API_SYSADMIN = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
-        leaseeUsername = faker.internet.email(); console.debug(leaseeUsername);
-        leaseePassword = faker.internet.password(15, false, /[A-Za-z\d]/); console.debug(leaseePassword);
+        leaseeUsername = faker.internet.email(); //console.debug(leaseeUsername);
+        leaseePassword = "FakE109" + faker.internet.password(10); //console.debug(leaseePassword);
     });
 
-    test('Leasing Team enables new Customer', async ({page}) => {test.slow();
+    test('Leasing Team enables new Customer', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
             await UI_LP_LEASING.loginOn(page);
         });
@@ -84,10 +82,11 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
             await page.frameLocator(iframe).locator('select[name="Profile"]').selectOption(LpCommunityUserProfileId);
             await page.frameLocator(iframe).locator("//input[@id='Email']").fill(leaseeUsername);
             await page.frameLocator(iframe).locator("(//input[@title='Save'])[last()]").click();
+            await page.waitForLoadState('networkidle');
         });
     });
 
-    test('Leasee sends out application', async ({page}) => {test.slow();
+    test('Leasee sends out application', async ({page}) => {
         await test.step('Setup Leasee User password', async() => {
             const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
             await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
@@ -146,13 +145,14 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
             await page.waitForLoadState('networkidle');
         });
 
-        test.step('Submit Application', async () => {
+        await test.step('Submit Application', async () => {
             await page.waitForTimeout(2000);
             await page.click('text=Submit Application');
+            await page.waitForLoadState('networkidle');
         });
     });
 
-    test('Leasing Team processes Opportunity until Document Approval', async ({page}) => {test.slow();
+    test('Leasing Team processes Opportunity until Document Approval', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
             await UI_LP_LEASING.loginOn(page);
         });
@@ -161,55 +161,58 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
             leaseeApp = (await API_SYSADMIN.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
             await NavigationBar.openApp(page, "Opportunities");
             await page.click("//*[@data-aura-class='forceListViewPicker']");
+            await page.waitForLoadState('networkidle');
             await page.fill("//input[@role='combobox']", 'LP - Application');
             await page.click("//span[text()='LP - Application']");
             await page.waitForLoadState('networkidle');
             await page.fill("//input[@name='Opportunity-search-input']", leaseeApp.Name);
+            await page.waitForLoadState('networkidle');
             await page.press("//input[@name='Opportunity-search-input']", 'Enter');
             await page.click(`//a[@data-recordid='${leaseeApp.Id}']`);
-        });
-    });
-
-    test.skip('Approval team reviews Approval Request', async ({page}) => {test.slow();
-    });
-
-    test.skip('Leasing Team finnishes Opportunity processing', async ({page}) => {test.slow();
-    });
-
-    test.skip('Portal flow until 1st payemnt', async ({page}) => {test.slow();
-        let username;
-        await test.step('Signup Password', async () => {
-            await page.goto(await mailer.latestSignupLink(), {waitUntil: 'networkidle'});
-            await page.fill(Signup.PASSWORD, Signup.commonPassword());
-            await page.fill(Signup.PASSWORD_CONFIRM, Signup.commonPassword());
-            await page.click(Signup.SIGNUP_BUTTON);
-        });
-        await test.step('Singup OTP', async () => {
-            await Signup.enterOTP(page, await mailer.latestSignupCode());
-            await page.click(Signup.CONTINUE_BUTTON);
-            username = FreezoneLogin.registeredUsernameFrom(await page.textContent(FreezoneLogin.USERNAME_BOX)??"");
-            await page.click(Signup.GO_TO_LOGIN_BUTTON);
-        });
-        await test.step('Login to Portal', async () => {
-            await page.fill(FreezoneLogin.USERNAME, username);
-            await page.fill(FreezoneLogin.PASSWORD, Signup.commonPassword());
-            await page.click(FreezoneLogin.LOGIN_BUTTON);
-        });
-        await test.step('Before Starting page', async () => {
-            await page.click(Home.CONTINUE_APPLICATION_BUTTON);
-            await page.click(BeforeStarting.TERMS_AND_CONDITIONS_LINK);
-            await page.click(BeforeStarting.TERMS_AND_CONDITIONS_ACCEPT_BUTTON);
-            await page.click(BeforeStarting.CONTINUE_BUTTON);
-        });
-        await test.step('Applicant Details', async () => {
-            await page.click(ApplicantDetails.CONSULTANT_OPTION_BUTTON);
-            await page.setInputFiles(ApplicantDetails.UPLOAD_LETTER_INPUT, './test/uploads/elephant.jpg');
-            await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
-            await page.setInputFiles(ApplicantDetails.UPLOAD_PASSPORT_INPUT, './test/uploads/elephant.jpg');
-            await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
-        });
-        await test.step('TBC...', async () => {
             await page.waitForLoadState('networkidle');
         });
     });
+
+    // test.skip('Approval team reviews Approval Request', async ({page}) => {test.slow();
+    // });
+
+    // test.skip('Leasing Team finnishes Opportunity processing', async ({page}) => {test.slow();
+    // });
+
+    // test.skip('Portal flow until 1st payemnt', async ({page}) => {test.slow();
+    //     let username;
+    //     await test.step('Signup Password', async () => {
+    //         await page.goto(await mailer.latestSignupLink(), {waitUntil: 'networkidle'});
+    //         await page.fill(Signup.PASSWORD, Signup.commonPassword());
+    //         await page.fill(Signup.PASSWORD_CONFIRM, Signup.commonPassword());
+    //         await page.click(Signup.SIGNUP_BUTTON);
+    //     });
+    //     await test.step('Singup OTP', async () => {
+    //         await Signup.enterOTP(page, await mailer.latestSignupCode());
+    //         await page.click(Signup.CONTINUE_BUTTON);
+    //         username = FreezoneLogin.registeredUsernameFrom(await page.textContent(FreezoneLogin.USERNAME_BOX)??"");
+    //         await page.click(Signup.GO_TO_LOGIN_BUTTON);
+    //     });
+    //     await test.step('Login to Portal', async () => {
+    //         await page.fill(FreezoneLogin.USERNAME, username);
+    //         await page.fill(FreezoneLogin.PASSWORD, Signup.commonPassword());
+    //         await page.click(FreezoneLogin.LOGIN_BUTTON);
+    //     });
+    //     await test.step('Before Starting page', async () => {
+    //         await page.click(Home.CONTINUE_APPLICATION_BUTTON);
+    //         await page.click(BeforeStarting.TERMS_AND_CONDITIONS_LINK);
+    //         await page.click(BeforeStarting.TERMS_AND_CONDITIONS_ACCEPT_BUTTON);
+    //         await page.click(BeforeStarting.CONTINUE_BUTTON);
+    //     });
+    //     await test.step('Applicant Details', async () => {
+    //         await page.click(ApplicantDetails.CONSULTANT_OPTION_BUTTON);
+    //         await page.setInputFiles(ApplicantDetails.UPLOAD_LETTER_INPUT, './test/uploads/elephant.jpg');
+    //         await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
+    //         await page.setInputFiles(ApplicantDetails.UPLOAD_PASSPORT_INPUT, './test/uploads/elephant.jpg');
+    //         await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
+    //     });
+    //     await test.step('TBC...', async () => {
+    //         await page.waitForLoadState('networkidle');
+    //     });
+    // });
 });

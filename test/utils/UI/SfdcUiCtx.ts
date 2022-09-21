@@ -16,9 +16,10 @@ export class SfdcUiCtx extends SfdcCtx {
         })
     }
 
-    public async navigateToRecord(page: Page, id: string): Promise<void> {
+    public async navigateToRecord(page: Page, id: string, removeSlash?: boolean): Promise<void> {
         const recordUri = await this.credentials
             .environmentDataFor(this.environment).baseUrl
+            + (removeSlash ? "" : "/")
             + id;
         await page.goto(recordUri);
     }

@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@faker-js/faker": "^7.5.0",
-    "@playwright/test": "^1.26.0",
+    "@playwright/test": "1.25.2",
     "@types/jsforce": "^1.9.43",
     "ajv": "^8.11.0",
     "googleapis": "^95.0.0",

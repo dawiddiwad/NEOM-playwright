@@ -62,7 +62,6 @@ export class SfdcApiCtx extends SfdcCtx {
     data: Object | Array<Object>
   ): Promise<SuccessResult | SuccessResult[]> {
     try {
-      console.log(`creating new ${sobject} ...`);
       const results = await this.conn.create(sobject, data, {
         allOrNone: true,
       });
@@ -84,7 +83,6 @@ export class SfdcApiCtx extends SfdcCtx {
     id: SalesforceId | SalesforceId[]
   ): Promise<RecordResult | RecordResult[]> {
     try {
-      console.log(`deleting ${sobject} records ${id} ...`);
       const results = await this.conn.delete(sobject, id);
       if (results instanceof Array) {
         return this.checkForErrors(results);
@@ -104,7 +102,6 @@ export class SfdcApiCtx extends SfdcCtx {
     id: SalesforceId | SalesforceId[]
   ): Promise<Record | Record[]> {
     try {
-      console.log(`reading ${sobject} data of ${id} ...`);
       const result = await this.conn.retrieve(sobject, id);
       return result;
     } catch (e) {

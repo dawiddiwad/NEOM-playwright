@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { test, expect } from "@playwright/test";
 import { stringify } from "ajv";
-import { QueryResult } from "jsforce";
+import { QueryResult, RecordResult, SuccessResult } from "jsforce";
 import { ApplicantDetails } from "../locators/portal/ApplicantDetails";
 import { BeforeStarting } from "../locators/portal/BeforeStarting";
 import { FreezoneLogin } from "../locators/portal/FreezoneLogin";
@@ -44,13 +44,17 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         });
 
         await test.step('Create new Case', async () => {
-            await NavigationBar.openApp(page, "Cases");
-            await page.locator('a[role="button"]:has-text("New")').click();
-            await page.locator('text=Type--None-- >> a[role="button"]').click();
-            await page.locator('text=Request').click();
-            await page.locator('text=Case Origin*--None-- >> a[role="button"]').click();
-            await page.locator('a[role="menuitemradio"]:has-text("Web")').click();
-            await page.locator('button:has-text("Save")').nth(3).click();
+            const lpCaseRecordTypeId = (await API_SYSADMIN.query("select id from recordtype where name = 'LP Case'") as QueryResult<any>).records[0].Id;
+            const lpLeasingTeamQueueId = (await API_SYSADMIN.query("select id from Group where DeveloperName = 'Leasing_Team'") as QueryResult<any>).records[0].Id;
+            const lpCaseData = {
+                Origin: "Web",
+                Status: "New",
+                Type: "Request",
+                RecordTypeId: lpCaseRecordTypeId,
+                OwnerId: lpLeasingTeamQueueId
+            }
+            const lpCaseId = (await API_SYSADMIN.create("Case", lpCaseData) as SuccessResult).id;
+            await UI_LP_LEASING.navigateToRecord(page, lpCaseId);
         });
 
         await test.step('Create new Contact/Account and link it to the Case', async () => {
@@ -87,8 +91,22 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     });
 
     test('Leasee sends out application', async ({page}) => {
+        async function getLeaseeId (username: string, acc?: number): Promise<void> {
+            if (acc && acc > 10){
+                throw new Error(`unable to find Leasee User: ${username}`);
+            }
+            try {
+                return (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
+            } catch (error) {
+                if ((error as Error).message.includes('no records returned')){
+                    await page.waitForTimeout(1000);
+                    return getLeaseeId(username, (acc ? ++acc : 1));
+                } else throw error;
+            }
+        }
+
         await test.step('Setup Leasee User password', async() => {
-            const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
+            const leaseeUserId = await getLeaseeId(leaseeUsername);
             await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
         });
 
@@ -155,21 +173,12 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     test('Leasing Team processes Opportunity until Document Approval', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
             await UI_LP_LEASING.loginOn(page);
+            await page.waitForLoadState('networkidle');
         });
 
         await test.step('Navigate to recently Submitted Opportunity', async () => {
             leaseeApp = (await API_SYSADMIN.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
-            await NavigationBar.openApp(page, "Opportunities");
-            await page.click("//*[@data-aura-class='forceListViewPicker']");
-            await page.waitForLoadState('networkidle');
-            await page.fill("//input[@role='combobox']", 'LP - Application');
-            await page.click("//span[text()='LP - Application']");
-            await page.waitForLoadState('networkidle');
-            await page.fill("//input[@name='Opportunity-search-input']", leaseeApp.Name);
-            await page.waitForLoadState('networkidle');
-            await page.press("//input[@name='Opportunity-search-input']", 'Enter');
-            await page.click(`//a[@data-recordid='${leaseeApp.Id}']`);
-            await page.waitForLoadState('networkidle');
+            await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
         });
     });
 

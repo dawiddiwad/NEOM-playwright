@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import test from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { stringify } from "ajv";
 import { QueryResult } from "jsforce";
 import { ApplicantDetails } from "../locators/portal/ApplicantDetails";
@@ -28,6 +28,7 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
     let API_SYSADMIN: SfdcApiCtx;
     let leaseeUsername;
     let leaseePassword;
+    let leaseeApp;
 
     test.describe.configure({ mode: 'serial' });
 
@@ -86,7 +87,7 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
         });
     });
 
-    test('Leasee fills out application', async ({page}) => {test.slow();
+    test('Leasee sends out application', async ({page}) => {test.slow();
         await test.step('Setup Leasee User password', async() => {
             const leaseeUserId = (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
             await API_SYSADMIN.executeApex(`System.setPassword('${leaseeUserId}','${leaseePassword}');`);
@@ -99,11 +100,74 @@ test.describe('NEOM test automation demo - LP E2E flow', () => {
             await page.fill("//input[@placeholder='Username']", leaseeUsername);
             await page.fill("//input[@placeholder='Password']", leaseePassword);
             await page.click("//button[descendant::*[text()='Log in']]");
-            await page.waitForTimeout(5000);
+            await page.waitForLoadState('networkidle');
+        });
+
+        await test.step('Fill new Application Form', async() => {
+            await page.locator('text=New Application').click();
+            await page.waitForLoadState('networkidle');
+            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Phone']]]", faker.phone.number('###-###-###'));
+            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress());
+            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city());
+            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode());
+            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", faker.address.country());
+            await page.locator('text=Laydown Yard AssetsOther Laydown Yard Assets >> [placeholder="Select an option"]').click();
+            await page.locator('text=Plot').click();
+            await page.locator('text=Batch Plant AssetsOther Batch Plant Assets >> [placeholder="Select an option"]').click();
+            await page.locator('text=Laboratory').click();
+            await page.locator('[aria-label="Size of the Area \\(sqm\\)\\, Select size of the area"]').click();
+            await page.locator('span:has-text("5000 - 10000")').nth(1).click()
+            await page.locator('text=*I hereby acknowledge that I have read, understand, and acknowledge for full com >> span').first().click();
+            await page.locator('text=Continue').click();
+            await page.waitForLoadState('networkidle');
+        });
+
+        await test.step('Upload Documents', async() => {
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Overall Company Profile']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='ZATCA Certificate']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Saudization Certificate']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Authorization Letter']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Conflict of Interest Form']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Commercial Registration Certificate']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Valid VAT Registration Certificate']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='Bank Details']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='NEOM Non-Disclosure Agreement']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.setInputFiles("//span[contains(@class,'file-selector__button') and ancestor::slot[descendant::*[text()='General Organization for Social Insuranc']]]", './test/uploads/document.pdf');
+            await page.click("//button[descendant::*[text()='Done']]");
+            await page.waitForLoadState('networkidle');
+        });
+
+        test.step('Submit Application', async () => {
+            await page.waitForTimeout(2000);
+            await page.click('text=Submit Application');
         });
     });
 
-    test.skip('Leasing Team processes Opportunity until Document Approval', async ({page}) => {test.slow();
+    test('Leasing Team processes Opportunity until Document Approval', async ({page}) => {test.slow();
+        await test.step('login to SFDC as LP Leasing Team', async () => {
+            await UI_LP_LEASING.loginOn(page);
+        });
+
+        await test.step('Navigate to recently Submitted Opportunity', async () => {
+            leaseeApp = (await API_SYSADMIN.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
+            await NavigationBar.openApp(page, "Opportunities");
+            await page.click("//*[@data-aura-class='forceListViewPicker']");
+            await page.fill("//input[@role='combobox']", 'LP - Application');
+            await page.click("//span[text()='LP - Application']");
+            await page.waitForLoadState('networkidle');
+            await page.fill("//input[@name='Opportunity-search-input']", leaseeApp.Name);
+            await page.press("//input[@name='Opportunity-search-input']", 'Enter');
+            await page.click(`//a[@data-recordid='${leaseeApp.Id}']`);
+        });
     });
 
     test.skip('Approval team reviews Approval Request', async ({page}) => {test.slow();

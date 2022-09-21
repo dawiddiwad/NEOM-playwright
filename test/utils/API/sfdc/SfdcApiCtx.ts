@@ -121,6 +121,8 @@ export class SfdcApiCtx extends SfdcCtx {
     return await this.conn.query(soql, undefined, function(err, res) {
       if (err) {
         throw new Error(`unable to execute soql:\n${soql}\ndue to:\n${(err as Error).stack}`);
+      } else if (!res.records.length){
+        throw new Error(`no records returned by soql:\n${soql}}`);
       } else return res;
     });
   }
@@ -128,12 +130,12 @@ export class SfdcApiCtx extends SfdcCtx {
   public async executeApex(apexBody: string): Promise<ExecuteAnonymousResult> {
     const result: ExecuteAnonymousResult = await this.conn.tooling.executeAnonymous(apexBody, function(err, res) {
       if (err) {
-        throw new Error(`unable to execute apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`);
+        throw new Error(`unable to execute anonymous apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`);
       }
     });
 
     if (!result.success){
-      throw new Error(`unable to execute apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
+      throw new Error(`exception running anonymous apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
     } else return result;
   }
 }

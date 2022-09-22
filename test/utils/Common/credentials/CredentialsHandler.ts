@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "fs/promises";
 import Ajv from "ajv";
-import console from "console";
+import * as console from "console";
 
 export abstract class CredentialsHandler {
     protected content: any;

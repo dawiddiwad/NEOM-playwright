@@ -3,7 +3,7 @@ import { LoginPage } from "../../locators/sfdc/LoginPage";
 import { UserCredentials } from "../common/credentials/structures/SalesforceCredentialsStructure";
 import { Environment } from "../common/credentials/structures/Environment";
 import { User } from "../common/credentials/structures/User";
-import { SfdcCtx } from "../Common/context/SfdcCtx";
+import { SfdcCtx } from "../common/context/SfdcCtx";
 
 export class SfdcUiCtx extends SfdcCtx {
     public readonly Ready: Promise<this>;

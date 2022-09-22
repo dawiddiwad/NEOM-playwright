@@ -12,7 +12,7 @@ import {
   UserInfo,
   ExecuteOptions
 } from "jsforce";
-import { SfdcCtx } from "../../Common/context/SfdcCtx";
+import { SfdcCtx } from "../../common/context/SfdcCtx";
 import { Environment } from "../../common/credentials/structures/Environment";
 import { User } from "../../common/credentials/structures/User";
 

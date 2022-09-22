@@ -1,4 +1,4 @@
-import { SalesforceCredentialsHandler } from "../common/credentials/SalesforceCredentialsHandler";
+import { SalesforceCredentialsHandler } from "../Common/credentials/SalesforceCredentialsHandler";
 
 (async() => {
     const username: string = process.argv[2];

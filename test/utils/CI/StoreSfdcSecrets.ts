@@ -10,6 +10,6 @@ import { SalesforceCredentialsHandler } from "../common/credentials/SalesforceCr
     }
     await new SalesforceCredentialsHandler().Ready
         .then(async handle => {
-            await handle.updateUserCredentialsFor({username, password});
+            await (handle as any).updateUserCredentialsFor({username, password});
     });
 })();

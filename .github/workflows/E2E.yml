@@ -20,7 +20,7 @@ jobs:
         npx ts-node test/utils/CI/StoreSfdcSecrets.ts lp-test-approver@neomssint.sandbox.lightning.force.com ${{ secrets.INT_LP_APPROVER_PSWD }}   
         npx ts-node test/utils/CI/StoreSfdcSecrets.ts dawid.dobrowolski@publicissapient.com.nss.neomssint ${{ secrets.INT_SYSADMIN_PSWD }}   
     - name: Run tests
-      run: npm run test-cli-debug 
+      run: npm run test 
     - uses: actions/upload-artifact@v2
       with:
         name: playwright-test-report

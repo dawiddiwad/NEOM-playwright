@@ -45,6 +45,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     test('Leasing Team enables new Customer', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
             await UI_LP_LEASING.loginOn(page);
+            await page.waitForLoadState('networkidle');
         });
 
         await test.step('Create new Case', async () => {
@@ -70,9 +71,9 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.locator('[placeholder="Search Accounts\\.\\.\\."]').click();
             await page.locator('div[role="option"]:has-text("New Account")').click();
             await page.locator("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Account Name']]] and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").fill(accountName);
-            await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").click();
+            await page.locator("(//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]])[last()]").click();
             await page.waitForLoadState('networkidle');
-            await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Contact']]]]").click();
+            await page.locator("(//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Contact']]]])[last()]").click();
             await page.waitForLoadState('networkidle');
             await page.locator("//button[@name='SaveEdit']").click();
             await page.waitForLoadState('networkidle');
@@ -189,15 +190,15 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.waitForLoadState('networkidle');
             await page.click("//button[@title='Edit No. of Years in the Industry']");
             await page.fill("//input[preceding-sibling::*[descendant::*[text()='No. of Years in the Industry']]]", "10");
-            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Business with NEOM']]]]", 'Enter');
+            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Business with NEOM']]]]", 'Enter'); await page.waitForTimeout(1000);
             await page.click("//a[text()='Yes']", {force: true,});
-            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Clients']]]]", 'Enter');
+            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Clients']]]]", 'Enter'); await page.waitForTimeout(1000);
             await page.click("//a[text()='Major']", {force: true,});
-            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Financial Statement']]]]", 'Enter');
+            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Financial Statement']]]]", 'Enter'); await page.waitForTimeout(1000);
             await page.click("//a[text()='Provided']", {force: true,});
-            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Type']]]]", 'Enter');
+            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Type']]]]", 'Enter'); await page.waitForTimeout(1000);
             await page.click("//a[text()='NEOM Function']", {force: true,});
-            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Account Type - Score']]]]", 'Enter');
+            await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Account Type - Score']]]]", 'Enter'); await page.waitForTimeout(1000);
             await page.click("//a[text()='6']", {force: true,});
             await page.check("//input[preceding-sibling::*[descendant::*[text()='Overall Company Profile']]]");
             await page.check("//input[preceding-sibling::*[descendant::*[text()='Commercial Registration Certificate']]]");

@@ -9,7 +9,6 @@ const config = {
   use: {
     actionTimeout: 10000,
     navigationTimeout: 15000,
-    channel: 'chrome',
     headless: true,
     ignoreHTTPSErrors: true,
     trace: {

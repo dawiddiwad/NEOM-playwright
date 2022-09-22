@@ -28,16 +28,18 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     let UI_SYSADMIN: SfdcUiCtx;
     let API_SYSADMIN: SfdcApiCtx;
     let leaseeUsername;
-    let leaseePassword;
     let leaseeApp;
+    let contactName;
+    let accountName;
 
     test.beforeAll(async () => {
         UI_LP_LEASING = await new SfdcUiCtx(Environment.INT, User.LP_LEASING).Ready;
         UI_LP_APPROVER = await new SfdcUiCtx(Environment.INT, User.LP_APPROVER).Ready;
         UI_SYSADMIN = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
         API_SYSADMIN = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
-        leaseeUsername = faker.internet.email(); //console.debug(leaseeUsername);
-        leaseePassword = "FakE109" + faker.internet.password(10); //console.debug(leaseePassword);
+        leaseeUsername = faker.internet.email();
+        contactName = faker.name.firstName();
+        accountName = `${faker.commerce.productName()} ${faker.company.companySuffix()}`;
     });
 
     test('Leasing Team enables new Customer', async ({page}) => {
@@ -64,10 +66,10 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.locator('[placeholder="Search Contacts\\.\\.\\."]').click();
             await page.locator('lightning-base-combobox-item[role="option"]:has-text("AddNew Contact")').click();
             await page.locator('[placeholder="Last Name"]').click();
-            await page.locator('[placeholder="Last Name"]').fill(faker.name.firstName());
+            await page.locator('[placeholder="Last Name"]').fill(contactName);
             await page.locator('[placeholder="Search Accounts\\.\\.\\."]').click();
             await page.locator('div[role="option"]:has-text("New Account")').click();
-            await page.locator("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Account Name']]] and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").fill(faker.company.name());
+            await page.locator("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Account Name']]] and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").fill(accountName);
             await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Account']]]]").click();
             await page.waitForLoadState('networkidle');
             await page.locator("//button[@title='Save' and ancestor::*[preceding-sibling::*[descendant::h2[text()='New Contact']]]]").click();
@@ -176,29 +178,26 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         await test.step('Navigate to recently Submitted Opportunity', async () => {
             leaseeApp = (await API_SYSADMIN.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
             await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
-            //await UI_LP_LEASING.navigateToRecord(page, '0063H000009i4yoQAA');
         });
 
         await test.step('Eligibility check', async () => {
             await page.click("//a[@data-tab-name='Eligibility']");
             await page.click("//button[descendant::*[text()='Mark as Current Stage']]");
-            await page.evaluate(() => window.scrollTo(0, document.querySelector(".viewport").scrollHeight));
+            await page.waitForLoadState('networkidle');
             await page.click("//a[@data-label='Scoring']");
+            await page.mouse.wheel(0, 800); 
+            await page.waitForLoadState('networkidle');
             await page.click("//button[@title='Edit No. of Years in the Industry']");
             await page.fill("//input[preceding-sibling::*[descendant::*[text()='No. of Years in the Industry']]]", "10");
             await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Business with NEOM']]]]", 'Enter');
             await page.click("//a[text()='Yes']", {force: true,});
             await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Clients']]]]", 'Enter');
-            // await page.press('one-record-home-flexipage2 >> text=Clients--None-- >> a[role="button"]', 'Enter');
             await page.click("//a[text()='Major']", {force: true,});
             await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Financial Statement']]]]", 'Enter');
-            // await page.press('one-record-home-flexipage2 >> text=Financial Statement--None-- >> a[role="button"]', 'Enter');
             await page.click("//a[text()='Provided']", {force: true,});
             await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Type']]]]", 'Enter');
-            // await page.press('one-record-home-flexipage2 >> text=Type--None-- >> a[role="button"]', 'Enter');
             await page.click("//a[text()='NEOM Function']", {force: true,});
             await page.press("//a[ancestor::*[preceding-sibling::span[descendant::*[text()='Account Type - Score']]]]", 'Enter');
-            // await page.press('one-record-home-flexipage2 >> text=Account Type - Score--None-- >> a[role="button"]', 'Enter');
             await page.click("//a[text()='6']", {force: true,});
             await page.check("//input[preceding-sibling::*[descendant::*[text()='Overall Company Profile']]]");
             await page.check("//input[preceding-sibling::*[descendant::*[text()='Commercial Registration Certificate']]]");
@@ -247,7 +246,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         });
     });
 
-    test('Leasing Team finnishes Opportunity processing', async ({page}) => {
+    test('Leasing Team finalizes Opportunity process', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
             await UI_LP_LEASING.loginOn(page);
             await page.waitForLoadState('networkidle');
@@ -255,52 +254,34 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
         await test.step('Navigate to recently Submitted Opportunity', async () => {
             await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
-            //await UI_LP_LEASING.navigateToRecord(page, "0063H000009i6PyQAI");
         });
 
-        await test.step('Contract Approval', async() => {
+        await test.step('Contract Activation', async() => {
+            const oppOwnerName = (await API_SYSADMIN.query(`select Id, Owner.Name from Opportunity where id = '${leaseeApp.Id}'`) as QueryResult<any>).records[0].Owner.Name;
             await page.click("//a[@data-tab-name='Contract Approval']");
             await page.click("//button[descendant::*[text()='Mark as Current Stage']]");
             await page.click("//button[@name='Opportunity.Create_Contract']");
             await page.click("//button[text()='Create Contract' and contains(@class,'flow-button__NEXT')]");
-            //await page.click("//span[@id='window' and ancestor::*[preceding-sibling::*[descendant::span[text()='Contract']]]]");
+            await page.waitForLoadState('networkidle');
+            await page.reload();
+            await page.click("//a[ancestor::*[preceding-sibling::*[contains(@class,'test-id__field-label-container') and descendant::span[text()='Contract']]]]");
+            await page.click("//a[@title='Edit']");
+            await page.fill("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Contract Start Date']]]]", "01/01/2049");
+            await page.fill("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Contract End Date']]]]", "01/01/2050");
+            await page.fill("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Customer Signed By']]]]", contactName);
+            await page.click(`(//a[@role='option' and descendant::*[contains(text(),'${contactName}')] and ancestor::*[preceding-sibling::label[descendant::*[text()='Customer Signed By']]]])[1]`);
+            await page.fill("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Company Signed By']]]]", oppOwnerName);
+            await page.click(`//*[@title='${oppOwnerName}']`);
+            await page.click("//button[@title='Save']");
+            await page.click("//a[@data-tab-name='Activated']");
+            await page.click("//button[descendant::*[text()='Mark as Current Status']]");
+        })
+
+        await test.step('Close Opportunity', async() => {
+            await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
+            await page.click("//a[@data-tab-name='Closed']");
+            await page.click("//button[descendant::*[text()='Select Closed Stage']]");
+            await page.click("//button[text()='Done']");
         })
     });
-
-    // test.skip('Portal flow until 1st payemnt', async ({page}) => {test.slow();
-    //     let username;
-    //     await test.step('Signup Password', async () => {
-    //         await page.goto(await mailer.latestSignupLink(), {waitUntil: 'networkidle'});
-    //         await page.fill(Signup.PASSWORD, Signup.commonPassword());
-    //         await page.fill(Signup.PASSWORD_CONFIRM, Signup.commonPassword());
-    //         await page.click(Signup.SIGNUP_BUTTON);
-    //     });
-    //     await test.step('Singup OTP', async () => {
-    //         await Signup.enterOTP(page, await mailer.latestSignupCode());
-    //         await page.click(Signup.CONTINUE_BUTTON);
-    //         username = FreezoneLogin.registeredUsernameFrom(await page.textContent(FreezoneLogin.USERNAME_BOX)??"");
-    //         await page.click(Signup.GO_TO_LOGIN_BUTTON);
-    //     });
-    //     await test.step('Login to Portal', async () => {
-    //         await page.fill(FreezoneLogin.USERNAME, username);
-    //         await page.fill(FreezoneLogin.PASSWORD, Signup.commonPassword());
-    //         await page.click(FreezoneLogin.LOGIN_BUTTON);
-    //     });
-    //     await test.step('Before Starting page', async () => {
-    //         await page.click(Home.CONTINUE_APPLICATION_BUTTON);
-    //         await page.click(BeforeStarting.TERMS_AND_CONDITIONS_LINK);
-    //         await page.click(BeforeStarting.TERMS_AND_CONDITIONS_ACCEPT_BUTTON);
-    //         await page.click(BeforeStarting.CONTINUE_BUTTON);
-    //     });
-    //     await test.step('Applicant Details', async () => {
-    //         await page.click(ApplicantDetails.CONSULTANT_OPTION_BUTTON);
-    //         await page.setInputFiles(ApplicantDetails.UPLOAD_LETTER_INPUT, './test/uploads/elephant.jpg');
-    //         await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
-    //         await page.setInputFiles(ApplicantDetails.UPLOAD_PASSPORT_INPUT, './test/uploads/elephant.jpg');
-    //         await page.click(ApplicantDetails.UPLOAD_DONE_BUTTON);
-    //     });
-    //     await test.step('TBC...', async () => {
-    //         await page.waitForLoadState('networkidle');
-    //     });
-    // });
 });

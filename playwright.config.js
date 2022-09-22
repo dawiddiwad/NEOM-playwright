@@ -17,7 +17,7 @@ const config = {
       screenshots: true,
       snapshots: true
     },
-    viewport: { width: 1366, height: 768 },
+    viewport: { width: 1366, height: 1368 },
     video: {
       mode: "retain-on-failure",
       size: {

@@ -13,7 +13,7 @@ jobs:
     - name: Install project dependencies
       run: npm install
     - name: Install PW
-      run: npx playwright install chrome   
+      run: npx playwright install   
     - name: prepare credentials
       run: |
         npx ts-node test/utils/CI/StoreSfdcSecrets.ts jakub.kogut@publicissapient.com.neomssinttest ${{ secrets.INT_LP_LEASING_PSWD }}   

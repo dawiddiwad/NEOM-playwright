@@ -33,11 +33,11 @@ export class UiApi {
         }
     }
 
-    public static async wirteLayoutSectionsToFileFromOrg(filePath: string, recordId: string, apiCtx: SfdcApiCtx): Promise<void> {
+    public static async writeLayoutSectionsToFileFromOrg(filePath: string, recordId: string, apiCtx: SfdcApiCtx): Promise<void> {
         try {
             let layoutData: any = await UiApi.readLayoutFromOrg(recordId, apiCtx);
             layoutData = UiApi.parseLayoutSectionsFromLayoutData(layoutData);
-            await writeFile(filePath, layoutData);
+            await writeFile(filePath, JSON.stringify(layoutData));
         } catch (error) {
             throw new Error(`Unable to write Layout data to file due to:\n${(error as Error).stack}`);
         }

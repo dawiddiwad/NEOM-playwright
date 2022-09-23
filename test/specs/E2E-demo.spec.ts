@@ -292,7 +292,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
     test.only('debug metadata', async () => {
         console.log(await UiApi.readLayoutFromOrg("0066D000006gaEHQAY", API_LP_LEASING));
-        await UiApi.wirteLayoutSectionsToFileFromOrg('./layoutSO.json', "0066D000006gaEHQAY", API_LP_LEASING);
+        await UiApi.writeLayoutSectionsToFileFromOrg('./layoutSO.json', "0066D000006gaEHQAY", API_LP_LEASING);
         const layoutSO = await UiApi.parseDataFromFile('./layoutSO.json');
         const layoutINT = await UiApi.parseDataFromFile('./layoutINT.json');
         UiApi.layoutCompare(layoutSO, layoutINT);

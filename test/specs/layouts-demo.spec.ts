@@ -32,9 +32,13 @@ test.describe.serial('SFDC API Layouts validation demo', async () => {
         });
     });
 
-    test.only('grab data', async() => {
+    test('grab data', async() => {
         await UiApi.writeLayoutSectionsToFileFromOrg(
             './test/config/lp/layouts/case/full/sections.json', 
             '5003H0000071zFpQAI', leasingTeamApiCtx);
     })
+
+    test('debug', async() => {
+        console.log(await leasingTeamApiCtx.readRelatedListsUi('Opportunity', '0123H000000A6u9QAC'));
+    });
 })

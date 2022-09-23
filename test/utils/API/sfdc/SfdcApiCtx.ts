@@ -24,7 +24,7 @@ export class SfdcApiCtx extends SfdcCtx {
 
   constructor(environment: Environment, user: User) {
     super(environment, user);
-    this.conn = new Connection({loginUrl: 'https://test.salesforce.com'});
+    this.conn = new Connection({loginUrl: 'https://test.salesforce.com', version: "54.0"});
     this.Ready = new Promise<this>(async (connected, failure) => {
       try {
         await this.initialized;
@@ -137,10 +137,21 @@ export class SfdcApiCtx extends SfdcCtx {
     } else return result;
   }
 
-  public async readRecordUI(recordId: string): Promise<MetadataInfo | MetadataInfo[]> {
+  public async readRecordUi(recordId: string): Promise<MetadataInfo | MetadataInfo[]> {
     return this.conn.request({method:'Get', url: `/ui-api/record-ui/${recordId}`}, null, (err, result) => {
       if (err){
-        throw new Error(`unable to retrieve ui-api info due to:\n${(err as Error).stack}`);
+        throw new Error(`unable to retrieve /ui-api/record-ui/${recordId} due to:\n${(err as Error).stack}`);
+      }
+      return result;
+    });
+  }
+
+  public async readRelatedListsUi(object: string, recordTypeId?: string): Promise<MetadataInfo | MetadataInfo[]> {
+    recordTypeId = recordTypeId ? `?recordTypeId=${recordTypeId}` : '';
+    const resource = `/ui-api/related-list-info/${object}${recordTypeId}`;
+    return this.conn.request({method:'Get', url: resource}, null, (err, result) => {
+      if (err){
+        throw new Error(`unable to retrieve ${resource} due to:\n${(err as Error).stack}`);
       }
       return result;
     });

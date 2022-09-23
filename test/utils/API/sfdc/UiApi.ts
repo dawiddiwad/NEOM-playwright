@@ -26,7 +26,7 @@ export class UiApi {
 
     public static async readLayoutFromOrg(recordId: string, apiCtx: SfdcApiCtx): Promise<object> {
         try {
-            const layoutData = Object.values((await apiCtx.readRecordUI(recordId) as any).layouts)[0];
+            const layoutData = Object.values((await apiCtx.readRecordUi(recordId) as any).layouts)[0];
             return Object.values(layoutData)[0];
         } catch (error) {
             throw new Error(`Unable to read Layout data from org due to:\n${(error as Error).stack}`)

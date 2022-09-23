@@ -3,7 +3,7 @@ import { SfdcApiCtx } from "./SfdcApiCtx";
 import { readFile, writeFile } from "fs/promises"
 
 export class UiApi {
-    public static layoutCompare(layout1: object, layout2: object): void {
+    private static layoutCompare(layout1: object, layout2: object): void {
         try {
             expect(layout1).toStrictEqual(layout2);
         } catch (error) {
@@ -11,12 +11,17 @@ export class UiApi {
         }
     }
 
-    public static async parseDataFromFile(filePath: string): Promise<object> {
+    private static async parseDataFromFile(filePath: string): Promise<object> {
         try {
             return JSON.parse((await readFile(filePath)).toString());
         } catch (error) {
             throw new Error(`Unable to read Layout data from file due to:\n${(error as Error).stack}`)
         }
+    }
+
+    private static parseLayoutSectionsFromLayoutData(layoutData: any): object{
+        const sfdcId = /[a-zA-Z0-9]{18}/gm;
+        return JSON.parse(JSON.stringify(layoutData.Full.View.sections).replace(sfdcId, ""));
     }
 
     public static async readLayoutFromOrg(recordId: string, apiCtx: SfdcApiCtx): Promise<object> {
@@ -29,14 +34,23 @@ export class UiApi {
     }
 
     public static async wirteLayoutSectionsToFileFromOrg(filePath: string, recordId: string, apiCtx: SfdcApiCtx): Promise<void> {
-        const sfdcId = /[a-zA-Z0-9]{18}/gm;
         try {
             let layoutData: any = await UiApi.readLayoutFromOrg(recordId, apiCtx);
-            layoutData = JSON.stringify(
-                layoutData.Full.View.sections).replace(sfdcId, "");
+            layoutData = UiApi.parseLayoutSectionsFromLayoutData(layoutData);
             await writeFile(filePath, layoutData);
         } catch (error) {
             throw new Error(`Unable to write Layout data to file due to:\n${(error as Error).stack}`);
+        }
+    }
+
+    public static async compareLocalLayoutSectionsWithOrg(filePath: string, recordId: string, apiCtx: SfdcApiCtx): Promise<void>{
+        try {
+            const localLayout = await UiApi.parseDataFromFile(filePath);
+            let orgLayout: any = await UiApi.readLayoutFromOrg(recordId, apiCtx);
+            orgLayout = UiApi.parseLayoutSectionsFromLayoutData(orgLayout);
+            UiApi.layoutCompare(localLayout, orgLayout);
+        } catch (error) {
+            throw new Error(`Layouts validation failed due to:\n${(error as Error).stack}`);
         }
     }
 }

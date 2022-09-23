@@ -21,6 +21,7 @@ import { Environment } from "../utils/common/credentials/structures/Environment"
 import { User } from "../utils/common/credentials/structures/User";
 import { SfdcUiCtx } from "../utils/UI/SfdcUiCtx";
 import { writeFile, readFile } from "fs/promises";
+import { UiApi } from "../utils/API/sfdc/UiApi";
 
 test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     let mailer: FreezoneMailer;
@@ -290,33 +291,39 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     });
 
     test.only('debug metadata', async () => {
-        // // const recordId = '0063H000009i6jFQAQ'; //int
-        // const recordId = '0066D000006gaEHQAY'; //so
-        // const result: any = (await API_LP_LEASING.readRecordUI(recordId));
-        // let i = 0;
-        // console.log(Object.keys(result.records[recordId].fields).length);
-        // console.log(Object.keys(result));
+        console.log(await UiApi.readLayoutFromOrg("0066D000006gaEHQAY", API_LP_LEASING));
+        await UiApi.wirteLayoutSectionsToFileFromOrg('./layoutSO.json', "0066D000006gaEHQAY", API_LP_LEASING);
+        const layoutSO = await UiApi.parseDataFromFile('./layoutSO.json');
+        const layoutINT = await UiApi.parseDataFromFile('./layoutINT.json');
+        UiApi.layoutCompare(layoutSO, layoutINT);
 
-        // // const fieldsINT = JSON.stringify(Object.keys(result.records[recordId].fields)).replace(/[a-zA-Z0-9]{18}/gm,"");
-        // // const layoutINT = JSON.stringify((Object.values(result.layouts.Opportunity)[0] as any).Full.View.sections).replace(/[a-zA-Z0-9]{18}/gm,"");
-        // const fieldsSO = JSON.stringify(Object.keys(result.records[recordId].fields)).replace(/[a-zA-Z0-9]{18}/gm,"");
-        // const layoutSO = JSON.stringify((Object.values(result.layouts.Opportunity)[0] as any).Full.View.sections).replace(/[a-zA-Z0-9]{18}/gm,"");
+        // // // const recordId = '0063H000009i6jFQAQ'; //int
+        // // const recordId = '0066D000006gaEHQAY'; //so
+        // // const result: any = (await API_LP_LEASING.readRecordUI(recordId));
+        // // let i = 0;
+        // // console.log(Object.keys(result.records[recordId].fields).length);
+        // // console.log(Object.keys(result));
+
+        // // // const fieldsINT = JSON.stringify(Object.keys(result.records[recordId].fields)).replace(/[a-zA-Z0-9]{18}/gm,"");
+        // // // const layoutINT = JSON.stringify((Object.values(result.layouts.Opportunity)[0] as any).Full.View.sections).replace(/[a-zA-Z0-9]{18}/gm,"");
+        // // const fieldsSO = JSON.stringify(Object.keys(result.records[recordId].fields)).replace(/[a-zA-Z0-9]{18}/gm,"");
+        // // const layoutSO = JSON.stringify((Object.values(result.layouts.Opportunity)[0] as any).Full.View.sections).replace(/[a-zA-Z0-9]{18}/gm,"");
         
-        // // await writeFile('./fieldsINT.json', fieldsINT);
-        // // await writeFile('./layoutINT.json', layoutINT);
-        // await writeFile('./fieldsSO.json', fieldsSO);
-        // await writeFile('./layoutSO.json', layoutSO);
+        // // // await writeFile('./fieldsINT.json', fieldsINT);
+        // // // await writeFile('./layoutINT.json', layoutINT);
+        // // await writeFile('./fieldsSO.json', fieldsSO);
+        // // await writeFile('./layoutSO.json', layoutSO);
 
-        const fieldsINT =  JSON.parse((await readFile('./fieldsINT.json')).toString());
-        const layoutINT = JSON.parse((await readFile('./layoutINT.json')).toString());
-        const fieldsSO = JSON.parse((await readFile('./fieldsSO.json')).toString());
-        const layoutSO = JSON.parse((await readFile('./layoutSO.json')).toString());
-        // const fieldsINT = await readFile('./fieldsINT.json');
-        // const layoutINT = await readFile('./layoutINT.json');
-        // const fieldsSO = await readFile('./fieldsSO.json');
-        // const layoutSO = await readFile('./layoutSO.json');
+        // const fieldsINT =  JSON.parse((await readFile('./fieldsINT.json')).toString());
+        // const layoutINT = JSON.parse((await readFile('./layoutINT.json')).toString());
+        // const fieldsSO = JSON.parse((await readFile('./fieldsSO.json')).toString());
+        // const layoutSO = JSON.parse((await readFile('./layoutSO.json')).toString());
+        // // const fieldsINT = await readFile('./fieldsINT.json');
+        // // const layoutINT = await readFile('./layoutINT.json');
+        // // const fieldsSO = await readFile('./fieldsSO.json');
+        // // const layoutSO = await readFile('./layoutSO.json');
 
-        expect(fieldsINT).toStrictEqual(fieldsSO);
-        expect(layoutINT).toStrictEqual(layoutSO);
+        // expect(fieldsINT).toStrictEqual(fieldsSO);
+        // expect(layoutINT).toStrictEqual(layoutSO);
     })
 });

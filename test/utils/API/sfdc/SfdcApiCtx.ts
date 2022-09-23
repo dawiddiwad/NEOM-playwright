@@ -10,7 +10,8 @@ import {
   SObject,
   SuccessResult,
   UserInfo,
-  ExecuteOptions
+  ExecuteOptions,
+  MetadataInfo
 } from "jsforce";
 import { SfdcCtx } from "../../common/context/SfdcCtx";
 import { Environment } from "../../common/credentials/structures/Environment";
@@ -134,5 +135,14 @@ export class SfdcApiCtx extends SfdcCtx {
     if (!result.success){
       throw new Error(`exception running anonymous apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
     } else return result;
+  }
+
+  public async readRecordUI(recordId: string): Promise<MetadataInfo | MetadataInfo[]> {
+    return this.conn.request({method:'Get', url: `/ui-api/record-ui/${recordId}`}, null, (err, result) => {
+      if (err){
+        throw new Error(`unable to retrieve ui-api info due to:\n${(err as Error).stack}`);
+      }
+      return result;
+    });
   }
 }

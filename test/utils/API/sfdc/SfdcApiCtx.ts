@@ -62,7 +62,7 @@ export class SfdcApiCtx extends SfdcCtx {
   }
 
   public async create(sobject: string, data: object | object[]): Promise<RecordResult | RecordResult[]> {
-    return this.conn.create(sobject, data, {allOrNone: true,}, (err, result) => {
+    return this.conn.create(sobject, data, {allOrNone: true}, (err, result) => {
       if (err){
         throw new Error(`unable to create ${sobject} due to:\n${(err as Error).stack}`);
       }

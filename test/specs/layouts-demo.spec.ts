@@ -1,5 +1,8 @@
+import { faker } from "@faker-js/faker";
 import test from "@playwright/test";
-import { QueryResult, SuccessResult } from "jsforce";
+import { QueryResult, SuccessResult as RecordResult } from "jsforce";
+import { Contract } from "../neom/lp/layouts/Contract";
+import { Opportunity } from "../neom/lp/layouts/Opportunity";
 import { SfdcApiCtx } from "../utils/API/sfdc/SfdcApiCtx";
 import { UiApi } from "../utils/API/sfdc/UiApi";
 import { Environment } from "../utils/common/credentials/structures/Environment";
@@ -24,11 +27,33 @@ test.describe.serial('SFDC API Layouts validation demo', async () => {
                 StageName: "New",
                 CloseDate: "2030-10-07"
             }
-            oppId = (await sysadminApiCtx.create("Opportunity", oppData) as SuccessResult).id;
+            oppId = (await leasingTeamApiCtx.create("Opportunity", oppData) as RecordResult).id;
         });
 
         await test.step('Validate Layout', async () => {
-            await UiApi.compareLocalLayoutSectionsWithOrg('./layoutSO.json', oppId, leasingTeamApiCtx);
+            await UiApi.compareLocalLayoutSectionsWithOrg(Opportunity.VIEW_FULL_SECTIONS, oppId, leasingTeamApiCtx);
+        });
+    });
+
+    test('Validate LP Contract Layout for LP Leasing Team', async() => {
+        let conId;
+        await test.step('create Contract record', async () => {
+            const accData = {
+                Name: faker.company.name()
+            }
+            const accId = (await leasingTeamApiCtx.create("Account", accData) as RecordResult).id;
+            const conRecordTypeId = (await sysadminApiCtx.query("select id from recordtype where name = 'LP Contract'") as QueryResult<any>).records[0].Id;
+            const conData = {
+                RecordTypeId: conRecordTypeId,
+                AccountId: accId,
+                Status: 'Draft',
+                StartDate: '2049-01-01'
+            }
+            conId = (await leasingTeamApiCtx.create("Contract", conData) as RecordResult).id;
+        });
+
+        await test.step('Validate Layout', async () => {
+            await UiApi.compareLocalLayoutSectionsWithOrg(Contract.VIEW_FULL_SECTIONS, conId, leasingTeamApiCtx);
         });
     });
 

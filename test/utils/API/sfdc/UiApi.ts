@@ -11,14 +11,6 @@ export class UiApi {
         }
     }
 
-    private static async parseDataFromFile(filePath: string): Promise<object> {
-        try {
-            return JSON.parse((await readFile(filePath)).toString());
-        } catch (error) {
-            throw new Error(`Unable to read Layout data from file due to:\n${(error as Error).stack}`)
-        }
-    }
-
     private static parseLayoutSectionsFromLayoutData(layoutData: any): object{
         const sfdcId = /[a-zA-Z0-9]{18}/gm;
         return JSON.parse(JSON.stringify(layoutData.Full.View.sections).replace(sfdcId, ""));
@@ -43,9 +35,8 @@ export class UiApi {
         }
     }
 
-    public static async compareLocalLayoutSectionsWithOrg(filePath: string, recordId: string, apiCtx: SfdcApiCtx): Promise<void>{
+    public static async compareLocalLayoutSectionsWithOrg(localLayout: object, recordId: string, apiCtx: SfdcApiCtx): Promise<void>{
         try {
-            const localLayout = await UiApi.parseDataFromFile(filePath);
             let orgLayout: any = await UiApi.readLayoutFromOrg(recordId, apiCtx);
             orgLayout = UiApi.parseLayoutSectionsFromLayoutData(orgLayout);
             UiApi.layoutCompare(localLayout, orgLayout);

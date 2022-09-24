@@ -46,8 +46,11 @@ export class SfdcApiCtx extends SfdcCtx {
     });
   }
 
-  private checkForErrors(data: RecordResult[]): SuccessResult[] {
+  private checkForErrors(data: RecordResult[] | RecordResult): SuccessResult[] {
     let errors: any[] = [];
+    if (!(data instanceof Array)){
+      data = [data];
+    }
     data.forEach((result) => {
       if (!result.success) {
         (result as ErrorResult).errors.forEach((error) => errors.push(error));
@@ -58,25 +61,13 @@ export class SfdcApiCtx extends SfdcCtx {
     } else return data as SuccessResult[];
   }
 
-  public async create(
-    sobject: string,
-    data: Object | Array<Object>
-  ): Promise<SuccessResult | SuccessResult[]> {
-    try {
-      const results = await this.conn.create(sobject, data, {
-        allOrNone: true,
-      });
-      if (results instanceof Array) {
-        return this.checkForErrors(results);
-      } else {
-        return results as SuccessResult;
+  public async create(sobject: string, data: object | object[]): Promise<RecordResult | RecordResult[]> {
+    return this.conn.create(sobject, data, {allOrNone: true,}, (err, result) => {
+      if (err){
+        throw new Error(`unable to create ${sobject} due to:\n${(err as Error).stack}`);
       }
-    } catch (e) {
-      console.error(
-        `unable to create ${sobject} due to:\n${(e as Error).stack}`
-      );
-      process.exit(1);
-    }
+      return result;
+    });
   }
 
   public async delete(

@@ -45,8 +45,7 @@ export class SfdcApiCtx extends SfdcCtx {
     return this.conn.create(sobject, data, {allOrNone: true}, (err, result) => {
       if (err){
         throw new Error(`unable to create ${sobject} due to:\n${(err as Error).stack}`);
-      }
-      return result;
+      } else return result;
     });
   }
 
@@ -54,8 +53,7 @@ export class SfdcApiCtx extends SfdcCtx {
     return await this.conn.delete(sobject, id, null, (err, result) => {
       if (err) {
         throw new Error(`unable to delete ${sobject} record ${id} due to:\n${(err as Error).stack}`);
-      }
-      return result;
+      } else return result;
     });
   }
 
@@ -63,8 +61,7 @@ export class SfdcApiCtx extends SfdcCtx {
     return await this.conn.retrieve(sobject, id, null, (err, result) => {
       if (err) {
         throw new Error(`unable to read ${sobject} record ${id} due to:\n${(err as Error).stack}`);
-      }
-      return result;
+      } else return result;
     });
   }
 
@@ -79,22 +76,20 @@ export class SfdcApiCtx extends SfdcCtx {
   }
 
   public async executeApex(apexBody: string): Promise<ExecuteAnonymousResult> {
-    const result: ExecuteAnonymousResult = await this.conn.tooling.executeAnonymous(apexBody, function(err, res) {
+    return this.conn.tooling.executeAnonymous(apexBody, function(err, result) {
       if (err) {
         throw new Error(`unable to execute anonymous apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`);
-      }
+      } else if (!result.success){
+        throw new Error(`exception running anonymous apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
+      } else return result;
     });
-    if (!result.success){
-      throw new Error(`exception running anonymous apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
-    } else return result;
   }
 
   public async readRecordUi(recordId: string): Promise<MetadataInfo | MetadataInfo[]> {
     return this.conn.request({method:'Get', url: `/ui-api/record-ui/${recordId}`}, null, (err, result) => {
       if (err){
         throw new Error(`unable to retrieve /ui-api/record-ui/${recordId} due to:\n${(err as Error).stack}`);
-      }
-      return result;
+      } else return result;
     });
   }
 
@@ -104,8 +99,7 @@ export class SfdcApiCtx extends SfdcCtx {
     return this.conn.request({method:'Get', url: resource}, null, (err, result) => {
       if (err){
         throw new Error(`unable to retrieve ${resource} due to:\n${(err as Error).stack}`);
-      }
-      return result;
+      } else return result;
     });
   }
 }

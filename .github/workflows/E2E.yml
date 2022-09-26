@@ -16,9 +16,9 @@ jobs:
       run: npx playwright install   
     - name: prepare credentials
       run: |
-        npx ts-node test/utils/CI/StoreSfdcSecrets.ts jakub.kogut@publicissapient.com.neomssinttest ${{ secrets.INT_LP_LEASING_PSWD }}   
+        npx ts-node test/utils/CI/StoreSfdcSecrets.ts test-lp-leasing@drive-customer-8691.lightning.force.com ${{ secrets.INT_LP_LEASING_PSWD }}   
         npx ts-node test/utils/CI/StoreSfdcSecrets.ts lp-test-approver@neomssint.sandbox.lightning.force.com ${{ secrets.INT_LP_APPROVER_PSWD }}   
-        npx ts-node test/utils/CI/StoreSfdcSecrets.ts dawid.dobrowolski@publicissapient.com.nss.neomssint ${{ secrets.INT_SYSADMIN_PSWD }}   
+        npx ts-node test/utils/CI/StoreSfdcSecrets.ts test-283smmi4f9o4@example.com ${{ secrets.INT_SYSADMIN_PSWD }}   
     - name: Run tests
       run: npm run test 
     - uses: actions/upload-artifact@v2

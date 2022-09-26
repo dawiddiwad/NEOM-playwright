@@ -19,7 +19,7 @@ export class SfdcApiCtx extends SfdcCtx {
 
   constructor(environment: Environment, user: User) {
     super(environment, user);
-    this.conn = new Connection({loginUrl: 'https://test.salesforce.com', version: "54.0"});
+    this.conn = new Connection({ loginUrl: 'https://test.salesforce.com', version: "54.0" });
     this.Ready = new Promise<this>(async (connected, failure) => {
       try {
         await this.initialized;
@@ -32,18 +32,18 @@ export class SfdcApiCtx extends SfdcCtx {
           credentials.password
         );
         connected(this);
-      } catch (e) {
+      } catch (err) {
         console.error(
-          `unable to initialize SFDC API due to:\n${(e as Error).stack}`
+          `unable to initialize SFDC API due to:\n${(err as Error).stack}`
         );
-        failure(e);
+        failure(err);
       }
     });
   }
 
   public async create(sobject: string, data: object | object[]): Promise<RecordResult | RecordResult[]> {
-    return this.conn.create(sobject, data, {allOrNone: true}, (err, result) => {
-      if (err){
+    return this.conn.create(sobject, data, { allOrNone: true }, (err, result) => {
+      if (err) {
         throw new Error(`unable to create ${sobject} due to:\n${(err as Error).stack}`);
       } else return result;
     });
@@ -66,38 +66,38 @@ export class SfdcApiCtx extends SfdcCtx {
   }
 
   public async query(soql: string): Promise<QueryResult<unknown>> {
-    return await this.conn.query(soql, undefined, function(err, res) {
+    return await this.conn.query(soql, undefined, function (err, res) {
       if (err) {
         throw new Error(`unable to execute soql:\n${soql}\ndue to:\n${(err as Error).stack}`);
-      } else if (!res.records.length){
+      } else if (!res.records.length) {
         throw new Error(`no records returned by soql:\n${soql}}`);
       } else return res;
     });
   }
 
   public async executeApex(apexBody: string): Promise<ExecuteAnonymousResult> {
-    return this.conn.tooling.executeAnonymous(apexBody, function(err, result) {
+    return this.conn.tooling.executeAnonymous(apexBody, function (err, result) {
       if (err) {
         throw new Error(`unable to execute anonymous apex:\n${apexBody}\ndue to:\n${(err as Error).stack}`);
-      } else if (!result.success){
+      } else if (!result.success) {
         throw new Error(`exception running anonymous apex:\n${apexBody}\ndue to:\n${result.exceptionMessage}\n${result.exceptionStackTrace}`);
       } else return result;
     });
   }
 
   public async readRecordUi(recordId: string): Promise<MetadataInfo | MetadataInfo[]> {
-    return this.conn.request({method:'Get', url: `/ui-api/record-ui/${recordId}`}, null, (err, result) => {
-      if (err){
+    return this.conn.request({ method: 'Get', url: `/ui-api/record-ui/${recordId}` }, null, (err, result) => {
+      if (err) {
         throw new Error(`unable to retrieve /ui-api/record-ui/${recordId} due to:\n${(err as Error).stack}`);
       } else return result;
     });
   }
 
-  public async readRelatedListsUi(object: string, recordTypeId?: string): Promise<MetadataInfo | MetadataInfo[]> {
+  public async FreadRelatedListsUi(object: string, recordTypeId?: string): Promise<MetadataInfo | MetadataInfo[]> {
     recordTypeId = recordTypeId ? `?recordTypeId=${recordTypeId}` : '';
     const resource = `/ui-api/related-list-info/${object}${recordTypeId}`;
-    return this.conn.request({method:'Get', url: resource}, null, (err, result) => {
-      if (err){
+    return this.conn.request({ method: 'Get', url: resource }, null, (err, result) => {
+      if (err) {
         throw new Error(`unable to retrieve ${resource} due to:\n${(err as Error).stack}`);
       } else return result;
     });

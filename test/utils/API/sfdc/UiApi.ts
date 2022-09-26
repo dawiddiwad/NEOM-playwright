@@ -1,13 +1,13 @@
 import { expect } from "@playwright/test";
 import { SfdcApiCtx } from "./SfdcApiCtx";
-import { readFile, writeFile } from "fs/promises"
+import { writeFile } from "fs/promises"
 
 export class UiApi {
     private static layoutCompare(layout1: object, layout2: object): void {
         try {
             expect(layout1).toStrictEqual(layout2);
         } catch (error) {
-            throw new Error(`Layouts do not match due to:\n${(error as Error).stack}`)
+            throw new Error(`Layouts do not match due to:\n${(error as Error).stack}`);
         }
     }
 
@@ -39,9 +39,9 @@ export class UiApi {
         try {
             let orgLayout: any = await UiApi.readLayoutFromOrg(recordId, apiCtx);
             orgLayout = UiApi.parseLayoutSectionsFromLayoutData(orgLayout);
-            UiApi.layoutCompare(localLayout, orgLayout);
+            UiApi.layoutCompare(orgLayout, localLayout);
         } catch (error) {
-            throw new Error(`Layouts validation failed due to:\n${(error as Error).stack}`);
+            throw new Error(`Layouts validation via UI-API failed for user ${apiCtx.user} ${apiCtx.userInfo.id} due to:\n${(error as Error).stack}`);
         }
     }
 }

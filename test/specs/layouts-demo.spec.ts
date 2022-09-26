@@ -8,7 +8,7 @@ import { UiApi } from "../utils/API/sfdc/UiApi";
 import { Environment } from "../utils/common/credentials/structures/Environment";
 import { User } from "../utils/common/credentials/structures/User";
 
-test.describe.serial('SFDC API Layouts validation demo', async () => {
+test.describe.parallel('SFDC API Layouts validation demo', async () => {
     let sysadminApiCtx: SfdcApiCtx;
     let leasingTeamApiCtx: SfdcApiCtx;
 
@@ -57,13 +57,13 @@ test.describe.serial('SFDC API Layouts validation demo', async () => {
         });
     });
 
-    test.skip('grab data', async() => {
+    test('grab data', async() => {
         await UiApi.writeLayoutSectionsToFileFromOrg(
             './test/config/lp/layouts/case/full/sections.json', 
             '5003H0000071zFpQAI', leasingTeamApiCtx);
     })
 
-    test.skip('debug', async() => {
-        console.log(await leasingTeamApiCtx.readRelatedListsUi('Opportunity', '0123H000000A6u9QAC'));
+    test('debug', async() => {
+        await leasingTeamApiCtx.readRelatedListsUi('Opportunity', '0123H000000A6u9QAC');
     });
 })

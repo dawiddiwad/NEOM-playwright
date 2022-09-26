@@ -5,7 +5,7 @@ const config = {
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
   repeatEach: 20,
   retries: 3,
-  workers: 5,
+  workers: 20,
   use: {
     actionTimeout: 10000,
     navigationTimeout: 15000,

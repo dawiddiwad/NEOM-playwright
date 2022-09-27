@@ -123,11 +123,11 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         await test.step('Fill new Application Form', async() => {
             await page.locator('text=New Application').click();
             await page.waitForLoadState('networkidle');
-            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Phone']]]", faker.phone.number('###-###-###'));
-            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress());
-            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city());
-            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode());
-            await page.fill("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", faker.address.country());
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Phone']]]", faker.phone.number('###-###-###'), {delay: 100});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress(), {delay: 100});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city(), {delay: 100});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode(), {delay: 100});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", faker.address.country(), {delay: 100});
             await page.locator('text=Laydown Yard AssetsOther Laydown Yard Assets >> [placeholder="Select an option"]').click();
             await page.locator('text=Plot').click();
             await page.locator('text=Batch Plant AssetsOther Batch Plant Assets >> [placeholder="Select an option"]').click();

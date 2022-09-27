@@ -7,8 +7,8 @@ const config = {
   retries: 0,
   workers: 1,
   use: {
-    actionTimeout: 10000,
-    navigationTimeout: 15000,
+    actionTimeout: 20000,
+    navigationTimeout: 30000,
     headless: true,
     ignoreHTTPSErrors: true,
     trace: {

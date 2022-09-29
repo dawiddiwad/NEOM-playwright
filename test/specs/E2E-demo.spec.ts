@@ -22,9 +22,7 @@ import { User } from "../utils/common/credentials/structures/User";
 import { SfdcUiCtx } from "../utils/UI/SfdcUiCtx";
 
 test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
-    let mailer: FreezoneMailer;
     let UI_LP_LEASING: SfdcUiCtx;
-    let UI_LP_APPROVER: SfdcUiCtx;
     let UI_SYSADMIN: SfdcUiCtx;
     let API_SYSADMIN: SfdcApiCtx;
     let leaseeUsername;
@@ -34,7 +32,6 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
     test.beforeAll(async () => {
         UI_LP_LEASING = await new SfdcUiCtx(Environment.INT, User.LP_LEASING).Ready;
-        UI_LP_APPROVER = await new SfdcUiCtx(Environment.INT, User.LP_APPROVER).Ready;
         UI_SYSADMIN = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
         API_SYSADMIN = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
         leaseeUsername = faker.internet.email();
@@ -123,11 +120,11 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         await test.step('Fill new Application Form', async() => {
             await page.locator('text=New Application').click();
             await page.waitForLoadState('networkidle');
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Phone']]]", faker.phone.number('###-###-###'), {delay: 100});
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress(), {delay: 100});
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city(), {delay: 100});
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode(), {delay: 100});
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", faker.address.country(), {delay: 100});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Phone']]]", faker.phone.number('###-###-###'), {delay: 50});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress(), {delay: 50});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city(), {delay: 50});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode(), {delay: 50});
+            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", 'Poland', {delay: 50});
             await page.locator('text=Laydown Yard AssetsOther Laydown Yard Assets >> [placeholder="Select an option"]').click();
             await page.locator('text=Plot').click();
             await page.locator('text=Batch Plant AssetsOther Batch Plant Assets >> [placeholder="Select an option"]').click();
@@ -231,18 +228,23 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             expect(approvalRequests).toHaveLength(7);
         });
 
-        await test.step('login to SFDC as LP Approver', async () => {
-            await UI_LP_APPROVER.loginOn(page);
+        await test.step('Login to SFDC as System Admin', async () => {
+            await UI_SYSADMIN.loginOn(page);
             await page.waitForLoadState('networkidle');
-        });
+        })
 
-        await test.step('Approve all Approval Requests', async () => {
+        await test.step('Approve all Requests as individual Approvers', async () => {
             for (const record of approvalRequests){
-                await UI_LP_APPROVER.navigateToRecord(page, record.Id);
+                const approverId = (await API_SYSADMIN.query(`select ActorId from ProcessInstanceWorkitem where ProcessInstance.TargetObjectId = '${record.Id}'`) as QueryResult<any>).records[0].ActorId;
+                const orgId = (await API_SYSADMIN.query("select id from Organization") as QueryResult<any>).records[0].Id;
+                await UI_SYSADMIN.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${approverId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
+                await page.waitForLoadState('networkidle');
+                await UI_SYSADMIN.navigateToRecord(page, record.Id);
                 await page.click("//a[@title='Approve']");
                 await page.fill("//textarea[@role='textbox']", "approved by test automation");
                 await page.click("//button[descendant::*[text()='Approve']]");
                 await page.waitForLoadState('networkidle');
+                await UI_SYSADMIN.logoutFrom(page);
             }
         });
     });
@@ -274,7 +276,8 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.fill("//input[ancestor::*[preceding-sibling::label[descendant::*[text()='Company Signed By']]]]", oppOwnerName);
             await page.click(`//*[@title='${oppOwnerName}']`);
             await page.click("//button[@title='Save']");
-            await page.click("//a[@data-tab-name='Activated']");
+            await page.waitForLoadState('networkidle');
+            await page.click("(//a[@data-tab-name='Activated'])[last()]");
             await page.click("//button[descendant::*[text()='Mark as Current Status']]");
         })
 

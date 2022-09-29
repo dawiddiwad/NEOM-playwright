@@ -1,7 +1,7 @@
 // @ts-check
 /** @type {import('@playwright/test').PlaywrightTestConfig} */
 const config = {
-  timeout: 90000,
+  timeout: 180000,
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
   repeatEach: 1,
   retries: 0,

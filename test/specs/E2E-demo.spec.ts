@@ -124,7 +124,8 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.type("//input[ancestor::*[preceding-sibling::label[text()='Street']]]", faker.address.streetAddress(), {delay: 50});
             await page.type("//input[ancestor::*[preceding-sibling::label[text()='City']]]", faker.address.city(), {delay: 50});
             await page.type("//input[ancestor::*[preceding-sibling::label[text()='Postal Code']]]", faker.address.zipCode(), {delay: 50});
-            await page.type("//input[ancestor::*[preceding-sibling::label[text()='Country']]]", 'Poland', {delay: 50});
+            await page.click("//button[ancestor::*[preceding-sibling::label[text()='Country']]]");
+            await page.click("//*[text()='Albania']");
             await page.locator('text=Laydown Yard AssetsOther Laydown Yard Assets >> [placeholder="Select an option"]').click();
             await page.locator('text=Plot').click();
             await page.locator('text=Batch Plant AssetsOther Batch Plant Assets >> [placeholder="Select an option"]').click();

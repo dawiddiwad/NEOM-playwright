@@ -1,39 +1,26 @@
 import { faker } from "@faker-js/faker";
 import { test, expect } from "@playwright/test";
-import { stringify } from "ajv";
-import { QueryResult, RecordResult, SuccessResult } from "jsforce";
-import { ApplicantDetails } from "../locators/portal/ApplicantDetails";
-import { BeforeStarting } from "../locators/portal/BeforeStarting";
-import { FreezoneLogin } from "../locators/portal/FreezoneLogin";
-import { Home } from "../locators/portal/Home";
-import { Signup } from "../locators/portal/Signup";
-import { Lead } from "../locators/sfdc/editview/Lead";
-import { Opportunity } from "../locators/sfdc/editview/Opportunity";
-import { HighlightsPanel } from "../locators/sfdc/HighlightsPanel";
-import { LeadConvert } from "../locators/sfdc/LeadConvert";
-import { ListView } from "../locators/sfdc/ListView";
-import { Modal } from "../locators/sfdc/Modal";
-import { NavigationBar } from "../locators/sfdc/NavigationBar";
-import { StagesPath } from "../locators/sfdc/StagesPath";
-import { FreezoneMailer } from "../utils/API/gmail/FreezoneMailer";
+import { QueryResult, SuccessResult } from "jsforce";
 import { SfdcApiCtx } from "../utils/API/sfdc/SfdcApiCtx";
 import { Environment } from "../utils/common/credentials/structures/Environment";
 import { User } from "../utils/common/credentials/structures/User";
 import { SfdcUiCtx } from "../utils/UI/SfdcUiCtx";
 
 test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
-    let UI_LP_LEASING: SfdcUiCtx;
-    let UI_SYSADMIN: SfdcUiCtx;
-    let API_SYSADMIN: SfdcApiCtx;
+    let uiCtx: SfdcUiCtx;
+    let apiCtx: SfdcApiCtx;
+    let leasingTeamId;
+    let orgId;
     let leaseeUsername;
     let leaseeApp;
     let contactName;
     let accountName;
 
     test.beforeAll(async () => {
-        UI_LP_LEASING = await new SfdcUiCtx(Environment.INT, User.LP_LEASING).Ready;
-        UI_SYSADMIN = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
-        API_SYSADMIN = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
+        uiCtx = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
+        apiCtx = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
+        leasingTeamId = (await apiCtx.query("select Id, AssigneeId from PermissionSetAssignment where PermissionSet.Name = 'LP_App_Permission_Set' and Assignee.IsActive = true limit 1") as QueryResult<any>).records[0].AssigneeId;
+        orgId = (await apiCtx.query("select id from Organization") as QueryResult<any>).records[0].Id;
         leaseeUsername = faker.internet.email();
         contactName = faker.name.firstName();
         accountName = `${faker.commerce.productName()} ${faker.company.companySuffix()}`;
@@ -41,13 +28,13 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
     test('Leasing Team enables new Customer', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
-            await UI_LP_LEASING.loginOn(page);
-            await page.waitForLoadState('networkidle');
+            await uiCtx.loginOn(page);
+            await uiCtx.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${leasingTeamId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
         });
 
         await test.step('Create new Case', async () => {
-            const lpCaseRecordTypeId = (await API_SYSADMIN.query("select id from recordtype where name = 'LP Case'") as QueryResult<any>).records[0].Id;
-            const lpLeasingTeamQueueId = (await API_SYSADMIN.query("select id from Group where DeveloperName = 'Leasing_Team'") as QueryResult<any>).records[0].Id;
+            const lpCaseRecordTypeId = (await apiCtx.query("select id from recordtype where name = 'LP Case'") as QueryResult<any>).records[0].Id;
+            const lpLeasingTeamQueueId = (await apiCtx.query("select id from Group where DeveloperName = 'Leasing_Team'") as QueryResult<any>).records[0].Id;
             const lpCaseData = {
                 Origin: "Web",
                 Status: "New",
@@ -55,8 +42,8 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
                 RecordTypeId: lpCaseRecordTypeId,
                 OwnerId: lpLeasingTeamQueueId
             }
-            const lpCaseId = (await API_SYSADMIN.create("Case", lpCaseData) as SuccessResult).id;
-            await UI_LP_LEASING.navigateToRecord(page, lpCaseId);
+            const lpCaseId = (await apiCtx.create("Case", lpCaseData) as SuccessResult).id;
+            await uiCtx.navigateToRecord(page, lpCaseId);
         });
 
         await test.step('Create new Contact/Account and link it to the Case', async () => {
@@ -84,7 +71,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.click("//force-lookup[ancestor::*[preceding-sibling::*[contains(@class, 'label-container') and descendant::*[text()='Contact Name']]]]");
             await page.click("//button[text()='Enable Partner User']");
             const iframe = "//iframe[contains(@title, 'New User')]";
-            const LpCommunityUserProfileId = (await API_SYSADMIN.query("select id from profile where name = 'LP Partner Community Login User'") as QueryResult<any>).records[0].Id.substring(0,15);
+            const LpCommunityUserProfileId = (await apiCtx.query("select id from profile where name = 'LP Partner Community Login User'") as QueryResult<any>).records[0].Id.substring(0,15);
             await page.frameLocator(iframe).locator('select[name="Profile"]').selectOption(LpCommunityUserProfileId);
             await page.frameLocator(iframe).locator("//input[@id='Email']").fill(leaseeUsername);
             await page.frameLocator(iframe).locator("(//input[@title='Save'])[last()]").click();
@@ -98,7 +85,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
                 throw new Error(`unable to find Leasee User: ${username}`);
             }
             try {
-                return (await API_SYSADMIN.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
+                return (await apiCtx.query(`select id from user where username = '${leaseeUsername}'`) as QueryResult<any>).records[0].Id;
             } catch (error) {
                 if ((error as Error).message.includes('no records returned')){
                     await page.waitForTimeout(1000);
@@ -109,12 +96,12 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
         await test.step('Login to Portal', async() => {
             const leaseeUserId = await getLeaseeId(leaseeUsername);
-            const lpNetworkId = (await API_SYSADMIN.query("select id from Network where name = 'Logistics_Park'") as QueryResult<any>).records[0].Id;
-            const orgId = (await API_SYSADMIN.query("select id from Organization") as QueryResult<any>).records[0].Id;
+            const lpNetworkId = (await apiCtx.query("select id from Network where name = 'Logistics_Park'") as QueryResult<any>).records[0].Id;
+            const orgId = (await apiCtx.query("select id from Organization") as QueryResult<any>).records[0].Id;
 
-            await UI_SYSADMIN.loginOn(page);
+            await uiCtx.loginOn(page);
             await page.waitForLoadState('networkidle');
-            await UI_SYSADMIN.navigateToRecord(page, `/servlet/servlet.su?oid=${orgId}&retURL=%2F${leaseeUserId}&sunetworkid=${lpNetworkId}&sunetworkuserid=${leaseeUserId}`);
+            await uiCtx.navigateToRecord(page, `/servlet/servlet.su?oid=${orgId}&retURL=%2F${leaseeUserId}&sunetworkid=${lpNetworkId}&sunetworkuserid=${leaseeUserId}`);
         });
 
         await test.step('Fill new Application Form', async() => {
@@ -170,13 +157,13 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
 
     test('Leasing Team processes Opportunity until Document Approval', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
-            await UI_LP_LEASING.loginOn(page);
-            await page.waitForLoadState('networkidle');
+            await uiCtx.loginOn(page);
+            await uiCtx.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${leasingTeamId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
         });
 
         await test.step('Navigate to recently Submitted Opportunity', async () => {
-            leaseeApp = (await API_SYSADMIN.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
-            await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
+            leaseeApp = (await apiCtx.query(`select id, name from Opportunity where CreatedBy.Username = '${leaseeUsername}' and Application_Status__c = 'Submitted' order by CreatedDate desc limit 1`) as QueryResult<any>).records[0];
+            await uiCtx.navigateToRecord(page, leaseeApp.Id);
         });
 
         await test.step('Eligibility check', async () => {
@@ -225,43 +212,43 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     test('Approval team reviews Approval Request', async ({page}) => {
         let approvalRequests;
         await test.step('retrieve Approval Requests for the Opportunity', async () => {
-            approvalRequests = (await API_SYSADMIN.query(`select id from Approval_Request__c where Opportunity__r.Id = '${leaseeApp.Id}' and Status__c = 'Submitted'`) as QueryResult<any>).records;
+            approvalRequests = (await apiCtx.query(`select id from Approval_Request__c where Opportunity__r.Id = '${leaseeApp.Id}' and Status__c = 'Submitted'`) as QueryResult<any>).records;
             expect(approvalRequests).toHaveLength(7);
         });
 
         await test.step('Login to SFDC as System Admin', async () => {
-            await UI_SYSADMIN.loginOn(page);
+            await uiCtx.loginOn(page);
             await page.waitForLoadState('networkidle');
         })
 
         await test.step('Approve all Requests as individual Approvers', async () => {
             for (const record of approvalRequests){
-                const approverId = (await API_SYSADMIN.query(`select ActorId from ProcessInstanceWorkitem where ProcessInstance.TargetObjectId = '${record.Id}'`) as QueryResult<any>).records[0].ActorId;
-                const orgId = (await API_SYSADMIN.query("select id from Organization") as QueryResult<any>).records[0].Id;
-                await UI_SYSADMIN.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${approverId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
+                const approverId = (await apiCtx.query(`select ActorId from ProcessInstanceWorkitem where ProcessInstance.TargetObjectId = '${record.Id}'`) as QueryResult<any>).records[0].ActorId;
+                const orgId = (await apiCtx.query("select id from Organization") as QueryResult<any>).records[0].Id;
+                await uiCtx.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${approverId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
                 await page.waitForLoadState('networkidle');
-                await UI_SYSADMIN.navigateToRecord(page, record.Id);
+                await uiCtx.navigateToRecord(page, record.Id);
                 await page.click("//a[@title='Approve']");
                 await page.fill("//textarea[@role='textbox']", "approved by test automation");
                 await page.click("//button[descendant::*[text()='Approve']]");
                 await page.waitForLoadState('networkidle');
-                await UI_SYSADMIN.logoutFrom(page);
+                await uiCtx.logoutFrom(page);
             }
         });
     });
 
     test('Leasing Team finalizes Opportunity process', async ({page}) => {
         await test.step('login to SFDC as LP Leasing Team', async () => {
-            await UI_LP_LEASING.loginOn(page);
-            await page.waitForLoadState('networkidle');
+            await uiCtx.loginOn(page);
+            await uiCtx.navigateToRecord(page, `servlet/servlet.su?oid=${orgId}&suorgadminid=${leasingTeamId}&retURL=%2Flightning%2Fpage%2Fhome&targetURL=%2Flightning%2Fpage%2Fhome`);
         });
 
         await test.step('Navigate to recently Submitted Opportunity', async () => {
-            await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
+            await uiCtx.navigateToRecord(page, leaseeApp.Id);
         });
 
         await test.step('Contract Activation', async() => {
-            const oppOwnerName = (await API_SYSADMIN.query(`select Id, Owner.Name from Opportunity where id = '${leaseeApp.Id}'`) as QueryResult<any>).records[0].Owner.Name;
+            const oppOwnerName = (await apiCtx.query(`select Id, Owner.Name from Opportunity where id = '${leaseeApp.Id}'`) as QueryResult<any>).records[0].Owner.Name;
             await page.click("//a[@data-tab-name='Contract Approval']");
             await page.click("//button[descendant::*[text()='Mark as Current Stage']]");
             await page.click("//button[@name='Opportunity.Create_Contract']");
@@ -283,7 +270,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
         })
 
         await test.step('Close Opportunity', async() => {
-            await UI_LP_LEASING.navigateToRecord(page, leaseeApp.Id);
+            await uiCtx.navigateToRecord(page, leaseeApp.Id);
             await page.click("//a[@data-tab-name='Closed']");
             await page.click("//button[descendant::*[text()='Select Closed Stage']]");
             await page.click("//button[text()='Done']");

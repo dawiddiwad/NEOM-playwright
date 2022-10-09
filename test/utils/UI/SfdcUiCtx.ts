@@ -21,7 +21,7 @@ export class SfdcUiCtx extends SfdcCtx {
             .environmentDataFor(this.environment).baseUrl
             + (removeSlash ? "" : "/")
             + id;
-        await page.goto(recordUri);
+        await page.goto(recordUri, {waitUntil: 'networkidle'});
     }
 
     public async loginOn(page: Page): Promise<void> {

@@ -205,7 +205,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.waitForLoadState('networkidle');
             await page.reload();
             await page.click("//button[text()='Submit for approval']");
-            await page.click("//button[contains(@class,'flow-button__FINISH')]");
+            await page.click("//button[text()='Finish']");
         })
     });
 
@@ -252,7 +252,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
             await page.click("//a[@data-tab-name='Contract Approval']");
             await page.click("//button[descendant::*[text()='Mark as Current Stage']]");
             await page.click("//button[@name='Opportunity.Create_Contract']");
-            await page.click("//button[text()='Create Contract' and contains(@class,'flow-button__NEXT')]");
+            await page.click("//button[text()='Create Contract' and ancestor::*[contains(@class, 'modal')]]");
             await page.waitForLoadState('networkidle');
             await page.reload();
             await page.click("//a[ancestor::*[preceding-sibling::*[contains(@class,'test-id__field-label-container') and descendant::span[text()='Contract']]]]");

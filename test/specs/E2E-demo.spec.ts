@@ -19,7 +19,7 @@ test.describe.serial('NEOM test automation demo - LP E2E flow', () => {
     test.beforeAll(async () => {
         uiCtx = await new SfdcUiCtx(Environment.INT, User.SYSADMIN).Ready;
         apiCtx = await new SfdcApiCtx(Environment.INT, User.SYSADMIN).Ready;
-        leasingTeamId = (await apiCtx.query("select Id, AssigneeId from PermissionSetAssignment where PermissionSet.Name = 'LP_App_Permission_Set' and Assignee.IsActive = true limit 1") as QueryResult<any>).records[0].AssigneeId;
+        leasingTeamId = (await apiCtx.query("select Id, AssigneeId from PermissionSetAssignment where PermissionSet.Name = 'LP_App_Permission_Set' and Assignee.IsActive = true and Assignee.Profile.Name = 'LP Standard User' limit 1") as QueryResult<any>).records[0].AssigneeId;
         orgId = (await apiCtx.query("select id from Organization") as QueryResult<any>).records[0].Id;
         leaseeUsername = faker.internet.email();
         contactName = faker.name.firstName();
